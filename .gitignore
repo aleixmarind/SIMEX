@@ -1,0 +1,11 @@
+# Android
+.gradle/
+build/
+local.properties
+.navigation/
+
+# Visual Studio / .NET
+bin/
+obj/
+.vs/
+appsettings.Development.json
