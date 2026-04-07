@@ -6,11 +6,9 @@ import retrofit2.http.Path
 
 interface ApiService {
 
-    // 1. Obtener todos los países (y sus ciudades)
     @GET("Paissos")
     suspend fun getPaissos(): List<Pais>
 
-    // 2. Obtener un solo país por su ID (Opcional)
     @GET("Paissos/{id}")
     suspend fun getPaisById(@Path("id") id: Int): Pais
 

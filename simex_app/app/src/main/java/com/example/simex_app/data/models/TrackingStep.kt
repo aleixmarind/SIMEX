@@ -1,16 +1,11 @@
 package com.example.simex_app.data.models
 
 data class TrackingStep(
-    val id: String,
-    val descripcion: String,
-    val ubicacion: String,
-    val fecha: Long,
-    val estado: EstadoTracking
-)
+    val id: Int,
+    val ordre: Int?,
+    val nom: String?,
 
-enum class EstadoTracking {
-    PENDIENTE,
-    EN_PROCESO,
-    COMPLETADO,
-    RETRASADO
-}
+    // Relación con los Incoterms (ICollection en C#)
+    // Inicializamos con lista vacía por seguridad
+    val incoterms: List<Incoterm> = emptyList()
+)
