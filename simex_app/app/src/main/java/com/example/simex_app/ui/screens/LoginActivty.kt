@@ -35,7 +35,6 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun ejecutarLogin(email: String, pass: String) {
-        // CAMBIO: Usamos "usuari" para coincidir con el TryGetValue("usuari", ...) del controlador C#
         val datos = mapOf("usuari" to email, "contrasenya" to pass)
 
         lifecycleScope.launch {
@@ -46,18 +45,21 @@ class LoginActivity : AppCompatActivity() {
                 if (response.isSuccessful) {
                     val loginRes = response.body()
                     Log.d("LOGIN_DEBUG", "Login exitoso. Respuesta: $loginRes")
-                    Log.d("LOGIN_DEBUG", "Tipo de usuario recibido: ${loginRes?.tipo}")
 
                     when (loginRes?.tipo) {
                         "Agente" -> {
                             Log.d("LOGIN_DEBUG", "Redirigiendo a HomePageAgente")
                             val intent = Intent(this@LoginActivity, HomePageAgenteActivity::class.java)
+                            intent.putExtra("USER_NAME", loginRes.nombre)
+                            intent.putExtra("CLIENTE_ID", loginRes.id)
                             startActivity(intent)
                             finish()
                         }
                         "Cliente" -> {
                             Log.d("LOGIN_DEBUG", "Redirigiendo a HomePageCliente")
                             val intent = Intent(this@LoginActivity, HomePageClienteActivity::class.java)
+                            intent.putExtra("USER_NAME", loginRes.nombre)
+                            intent.putExtra("CLIENTE_ID", loginRes.id)
                             startActivity(intent)
                             finish()
                         }

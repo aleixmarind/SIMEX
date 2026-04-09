@@ -14,24 +14,27 @@ class HomePageClienteActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_homepagecliente)
 
+        // Recibimos el ID del Login (testigo)
+        val clienteId = intent.getIntExtra("CLIENTE_ID", 1004)
+        val nombreUsuario = intent.getStringExtra("USER_NAME") ?: "Cliente"
+
         // Referencias de la UI
         val tvWelcomeName = findViewById<TextView>(R.id.tvWelcomeName)
         val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottom_navigation)
 
-        // Aquí podrías recibir el nombre del usuario desde el Intent
-        val nombreUsuario = intent.getStringExtra("USER_NAME") ?: "Cliente"
         tvWelcomeName.text = "Hola, $nombreUsuario"
 
         // Configuración de la barra de navegación
         bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_home -> {
-                    // Ya estás aquí
                     true
                 }
                 R.id.nav_comandas -> {
-                    val intent = Intent(this, ComandasActivity::class.java)
-                    startActivity(intent)
+                    // PASO CLAVE: Pasamos el ID que recibimos a la siguiente actividad
+                    val intentComandas = Intent(this, ComandasActivity::class.java)
+                    intentComandas.putExtra("CLIENTE_ID", clienteId)
+                    startActivity(intentComandas)
                     true
                 }
                 R.id.nav_documentos -> {
@@ -50,7 +53,6 @@ class HomePageClienteActivity : AppCompatActivity() {
             }
         }
 
-        // Seleccionar Home por defecto
         bottomNavigation.selectedItemId = R.id.nav_home
     }
 }
