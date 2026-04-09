@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/nav_home" android:icon="@android:drawable/ic_menu_today" android:title="Home"/>
+    <item android:id="@+id/nav_incoterms" android:icon="@android:drawable/ic_menu_info_details" android:title="Incoterms"/>
+    <item android:id="@+id/nav_comandas" android:icon="@android:drawable/ic_menu_sort_by_size" android:title="Comandas"/>
+    <item android:id="@+id/nav_documentos" android:icon="@android:drawable/ic_menu_save" android:title="Docs"/>
+    <item android:id="@+id/nav_juego" android:icon="@android:drawable/ic_menu_help" android:title="Juego"/>
+    <item android:id="@+id/nav_perfil" android:icon="@android:drawable/ic_menu_myplaces" android:title="Perfil"/>
+</menu>
