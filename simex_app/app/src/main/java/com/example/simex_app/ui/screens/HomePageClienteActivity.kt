@@ -1,5 +1,6 @@
 package com.example.simex_app.ui.screens
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.TextView
 import android.widget.Toast
@@ -28,12 +29,9 @@ class HomePageClienteActivity : AppCompatActivity() {
                     // Ya estás aquí
                     true
                 }
-                R.id.nav_incoterms -> {
-                    Toast.makeText(this, "Ir a Incoterms", Toast.LENGTH_SHORT).show()
-                    true
-                }
                 R.id.nav_comandas -> {
-                    Toast.makeText(this, "Ir a Comandas", Toast.LENGTH_SHORT).show()
+                    val intent = Intent(this, ComandasActivity::class.java)
+                    startActivity(intent)
                     true
                 }
                 R.id.nav_documentos -> {

@@ -29,10 +29,14 @@
             android:name=".ui.screens.HomePageAgenteActivity"
             android:exported="false" />
 
-
         <activity
             android:name=".ui.screens.HomePageClienteActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".ui.screens.ComandasActivity"
+            android:exported="false"
+            android:label="Mis Comandas" />
 
     </application>
 
