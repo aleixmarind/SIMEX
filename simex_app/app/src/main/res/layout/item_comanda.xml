@@ -1,20 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="16dp"
-    android:layout_marginVertical="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="2dp"
-    app:strokeWidth="0dp">
+    android:layout_marginHorizontal="24dp"
+    android:layout_marginVertical="10dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/gray_200"
+    app:strokeWidth="1dp"
+    app:cardBackgroundColor="@color/white">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="20dp">
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -24,50 +25,91 @@
                 android:id="@+id/tvNumPedido"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
                 android:text="Pedido #"
-                android:textStyle="bold"
-                android:textColor="#1976D2" />
+                android:textColor="@color/brand_600"
+                android:textSize="13sp"
+                android:letterSpacing="0.02" />
 
             <TextView
                 android:id="@+id/tvEstado"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
-                android:text="ESTADO"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:background="#E3F2FD"
-                android:paddingHorizontal="8dp"
+                android:background="@color/brand_50"
+                android:fontFamily="sans-serif-black"
+                android:paddingHorizontal="10dp"
                 android:paddingVertical="4dp"
-                android:textColor="#1976D2" />
+                android:text="ESTADO"
+                android:textColor="@color/brand_600"
+                android:textSize="10sp"
+                android:textAllCaps="true" />
         </RelativeLayout>
 
         <TextView
             android:id="@+id/tvNombreOferta"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:fontFamily="sans-serif-black"
             android:text="Nombre de la Oferta"
+            android:textColor="@color/gray_900"
             android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginTop="8dp"
-            android:textColor="#212121" />
+            android:letterSpacing="-0.01" />
 
-        <TextView
-            android:id="@+id/tvRuta"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Origen ➔ Destino"
-            android:layout_marginTop="4dp"
-            android:textColor="#757575" />
+            android:layout_marginTop="6dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/tvFecha"
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@android:drawable/ic_menu_directions"
+                app:tint="@color/gray_500" />
+
+            <TextView
+                android:id="@+id/tvRuta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:fontFamily="sans-serif"
+                android:text="Origen ➔ Destino"
+                android:textColor="@color/gray_500"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginVertical="16dp"
+            android:background="@color/gray_200" />
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Fecha"
-            android:layout_marginTop="8dp"
-            android:textSize="12sp"
-            android:textColor="#9E9E9E" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Entrega estimada"
+                android:textColor="@color/gray_500"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvFecha"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:text="Fecha"
+                android:textColor="@color/gray_900"
+                android:textSize="13sp" />
+        </LinearLayout>
 
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
