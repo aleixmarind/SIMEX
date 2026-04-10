@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema; // Necesario para el atributo [ForeignKey]
 
 namespace smiex_api.Models;
 
@@ -64,6 +65,16 @@ public partial class Oferte
     public int? IdFreight { get; set; }
 
     public int Active { get; set; }
+
+    // --- NUEVOS CAMPOS PARA EL TRACKING ---
+
+    [Column("tracking_actual_id")] // Mapea con el nombre exacto de tu SQL
+    public int? TrackingActualId { get; set; }
+
+    [ForeignKey("TrackingActualId")]
+    public virtual TrackingStep? TrackingActual { get; set; }
+
+    // --- FIN CAMPOS NUEVOS ---
 
     public virtual Aeroport? AeroportDesti { get; set; }
 

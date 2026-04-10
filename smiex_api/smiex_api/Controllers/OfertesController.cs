@@ -103,5 +103,51 @@ namespace smiex_api.Controllers
         {
             return _context.Ofertes.Any(e => e.Id == id);
         }
+
+        // GET: api/Ofertes/Cliente/1004
+        [HttpGet("Cliente/{clienteId}")]
+        public async Task<ActionResult<IEnumerable<ComandaResumenDTO>>> GetComandasPorCliente(int clienteId)
+        {
+            // 1. Obtenemos todos los pasos posibles para el tracking (del 1 al 9)
+            var todosLosPasos = await _context.TrackingSteps
+                .Where(s => s.Id <= 9) // Solo tomamos la primera tanda de pasos
+                .OrderBy(s => s.Ordre)
+                .Select(s => new TrackingStepDTO
+                {
+                    Id = s.Id,
+                    Ordre = s.Ordre ?? 0,
+                    Nom = s.Nom
+                }).ToListAsync();
+
+            // 2. Obtenemos las ofertas del cliente
+            var comandas = await _context.Ofertes
+                .Include(o => o.PortOrigen)
+                .Include(o => o.PortDesti)
+                .Include(o => o.EstatOferta)
+                .Where(o => o.ClientId == clienteId && o.Active == 1)
+                .Select(o => new ComandaResumenDTO
+                {
+                    Id = o.Id,
+                    NumPedido = o.NumPedido.ToString(),
+                    NombreOferta = o.NombreOferta,
+                    PuertoOrigen = o.PortOrigen != null ? o.PortOrigen.Nom : "Sin Puerto",
+                    PuertoDestino = o.PortDesti != null ? o.PortDesti.Nom : "Sin Puerto",
+                    Estado = o.EstatOferta.Estat,
+                    FechaEntrega = o.FechaEntrega.HasValue ? o.FechaEntrega.Value.ToString("dd/MM/yyyy") : "Pendiente",
+
+                    // --- AQUÍ ESTÁ LA MAGIA ---
+                    TrackingActualId = o.TrackingActualId, // El ID de la tabla ofertes
+                    PasosSeguimiento = todosLosPasos    // Metemos la lista de los 9 pasos
+                })
+                .ToListAsync();
+
+            if (comandas == null || !comandas.Any())
+            {
+                return NotFound();
+            }
+
+            return Ok(comandas);
+        }
+
     }
 }

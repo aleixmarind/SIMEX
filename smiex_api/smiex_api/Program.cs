@@ -2,26 +2,26 @@ using Microsoft.EntityFrameworkCore;
 using smiex_api.Models;
 
 var builder = WebApplication.CreateBuilder(args);
-// Añadir el contexto de la base de datos
+
+// 1. Añadir el contexto de la base de datos
 builder.Services.AddDbContext<Simex05Context>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+
+// 2. CONFIGURAR SWAGGER (Añade estas dos líneas)
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// 3. HABILITAR LA INTERFAZ VISUAL (Modifica esta parte)
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI(); // Esto es lo que crea la página en /swagger
 }
 
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
