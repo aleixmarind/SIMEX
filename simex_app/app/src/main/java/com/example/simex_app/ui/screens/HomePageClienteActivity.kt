@@ -2,13 +2,27 @@ package com.example.simex_app.ui.screens
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
+import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.simex_app.R
+import com.example.simex_app.data.network.RetrofitClient
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.card.MaterialCardView
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class HomePageClienteActivity : AppCompatActivity() {
+
+    private lateinit var adapter: ComandaAdapter
+    private lateinit var rvRecentOrders: RecyclerView
+    private lateinit var cardNoOrders: MaterialCardView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,19 +35,22 @@ class HomePageClienteActivity : AppCompatActivity() {
         // Referencias de la UI
         val tvWelcomeName = findViewById<TextView>(R.id.tvWelcomeName)
         val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+        rvRecentOrders = findViewById(R.id.rvRecentOrders)
+        cardNoOrders = findViewById(R.id.cardNoOrders)
 
         tvWelcomeName.text = "Hola, $nombreUsuario"
+
+        setupRecyclerView()
+        obtenerComandasRecientes(clienteId)
 
         // Configuración de la barra de navegación
         bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
-                R.id.nav_home -> {
-                    true
-                }
+                R.id.nav_home -> true
                 R.id.nav_comandas -> {
-                    // PASO CLAVE: Pasamos el ID que recibimos a la siguiente actividad
                     val intentComandas = Intent(this, ComandasActivity::class.java)
                     intentComandas.putExtra("CLIENTE_ID", clienteId)
+                    intentComandas.putExtra("USER_NAME", nombreUsuario)
                     startActivity(intentComandas)
                     true
                 }
@@ -54,5 +71,40 @@ class HomePageClienteActivity : AppCompatActivity() {
         }
 
         bottomNavigation.selectedItemId = R.id.nav_home
+    }
+
+    private fun setupRecyclerView() {
+        rvRecentOrders.layoutManager = LinearLayoutManager(this)
+        adapter = ComandaAdapter(emptyList()) { comanda ->
+            val intent = Intent(this, DetalleComandaActivity::class.java)
+            intent.putExtra("DETALLE_COMANDA", comanda)
+            startActivity(intent)
+        }
+        rvRecentOrders.adapter = adapter
+    }
+
+    private fun obtenerComandasRecientes(clienteId: Int) {
+        lifecycleScope.launch {
+            try {
+                val listaComandas = withContext(Dispatchers.IO) {
+                    RetrofitClient.instance.getComandas(clienteId)
+                }
+
+                if (listaComandas.isNotEmpty()) {
+                    // Mostramos solo las 2-3 más recientes (asumiendo que vienen ordenadas o las tomamos tal cual)
+                    val recientes = listaComandas.take(2)
+                    adapter.updateList(recientes)
+                    rvRecentOrders.visibility = View.VISIBLE
+                    cardNoOrders.visibility = View.GONE
+                } else {
+                    rvRecentOrders.visibility = View.GONE
+                    cardNoOrders.visibility = View.VISIBLE
+                }
+            } catch (e: Exception) {
+                Log.e("HOME_API_ERROR", "Error al obtener comandas", e)
+                rvRecentOrders.visibility = View.GONE
+                cardNoOrders.visibility = View.VISIBLE
+            }
+        }
     }
 }
