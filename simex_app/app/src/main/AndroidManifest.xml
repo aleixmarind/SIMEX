@@ -38,6 +38,11 @@
             android:exported="false"
             android:label="Mis Comandas" />
 
+        <activity
+            android:name=".ui.screens.DetalleComandaActivity"
+            android:exported="false"
+            android:label="Detalle de Comanda" />
+
     </application>
 
 </manifest>

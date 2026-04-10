@@ -6,8 +6,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.simex_app.data.models.Comanda
 import com.example.simex_app.databinding.ItemComandaBinding
 
-class ComandaAdapter(private val lista: List<Comanda>) :
-    RecyclerView.Adapter<ComandaAdapter.ComandaViewHolder>() {
+class ComandaAdapter(
+    private var lista: List<Comanda>,
+    private val onItemClick: (Comanda) -> Unit
+) : RecyclerView.Adapter<ComandaAdapter.ComandaViewHolder>() {
 
     class ComandaViewHolder(val binding: ItemComandaBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -19,13 +21,20 @@ class ComandaAdapter(private val lista: List<Comanda>) :
     override fun onBindViewHolder(holder: ComandaViewHolder, position: Int) {
         val item = lista[position]
         with(holder.binding) {
-            tvNumPedido.text = item.numPedido
-            tvNombreOferta.text = item.nombreOferta
-            tvRuta.text = "${item.puertoOrigen} ➔ ${item.puertoDestino}"
-            tvEstado.text = item.estado.uppercase()
-            tvFecha.text = "Entrega estimada: ${item.fechaEntrega}"
+            tvNumPedido.text = item.numPedido ?: "N/A"
+            tvNombreOferta.text = item.nombreOferta ?: "Sin nombre"
+            tvRuta.text = "${item.puertoOrigen ?: "?"} ➔ ${item.puertoDestino ?: "?"}"
+            tvEstado.text = item.estado?.uppercase() ?: "PENDIENTE"
+            tvFecha.text = "Entrega estimada: ${item.fechaEntrega ?: "TBD"}"
+            
+            root.setOnClickListener { onItemClick(item) }
         }
     }
 
     override fun getItemCount() = lista.size
+
+    fun updateList(newList: List<Comanda>) {
+        this.lista = newList
+        notifyDataSetChanged()
+    }
 }

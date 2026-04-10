@@ -1,11 +1,11 @@
 package com.example.simex_app.data.models
 
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
+@Parcelize
 data class TrackingStep(
     val id: Int,
-    val ordre: Int?,
-    val nom: String?,
-
-    // Relación con los Incoterms (ICollection en C#)
-    // Inicializamos con lista vacía por seguridad
-    val incoterms: List<Incoterm> = emptyList()
-)
+    val ordre: Int,
+    val nom: String?
+) : Parcelable

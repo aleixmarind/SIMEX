@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="16dp">
+
+    <!-- Línea vertical del timeline -->
+    <View
+        android:id="@+id/viewLine"
+        android:layout_width="2dp"
+        android:layout_height="0dp"
+        android:background="@color/gray_200"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@id/imgStatus"
+        app:layout_constraintStart_toStartOf="@id/imgStatus"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Círculo de estado -->
+    <ImageView
+        android:id="@+id/imgStatus"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginVertical="16dp"
+        android:background="@color/white"
+        android:src="@android:drawable/presence_online"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/gray_500" />
+
+    <!-- Nombre del paso -->
+    <TextView
+        android:id="@+id/tvStepName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:text="Nombre del paso"
+        android:textColor="@color/gray_900"
+        android:textSize="16sp"
+        app:layout_constraintBottom_toBottomOf="@id/imgStatus"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/imgStatus"
+        app:layout_constraintTop_toTopOf="@id/imgStatus" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
