@@ -7,7 +7,7 @@
     android:background="@color/white"
     tools:context=".ui.screens.HomePageClienteActivity">
 
-    <!-- Header Section (Style matched with Login Brand Container) -->
+    <!-- Header Section -->
     <LinearLayout
         android:id="@+id/headerContainer"
         android:layout_width="match_parent"
@@ -75,45 +75,56 @@
             android:orientation="vertical"
             android:paddingBottom="24dp">
 
-            <!-- Section Title -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp"
-                android:layout_marginHorizontal="24dp"
-                android:fontFamily="sans-serif-black"
-                android:text="Ofertes Pendents"
-                android:textColor="@color/gray_900"
-                android:textSize="18sp" />
-
-            <!-- Card Styled like Login Form elements -->
+            <!-- Botón de Ofertas Llamativo (Sustituye la sección anterior) -->
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardNoOffers"
+                android:id="@+id/btnVerOfertas"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="32dp"
                 android:layout_marginHorizontal="24dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="32dp"
+                android:clickable="true"
+                android:focusable="true"
                 app:cardCornerRadius="16dp"
-                app:cardElevation="0dp"
-                app:strokeColor="@color/gray_200"
-                app:strokeWidth="1dp"
-                app:cardBackgroundColor="@color/white">
+                app:cardElevation="8dp"
+                app:cardBackgroundColor="@color/brand_600"
+                app:rippleColor="@color/white">
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="100dp"
+                    android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:orientation="vertical"
-                    android:padding="24dp">
+                    android:orientation="horizontal"
+                    android:padding="20dp">
 
-                    <TextView
-                        android:id="@+id/tvNoOffers"
+                    <ImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@android:drawable/ic_menu_send"
+                        app:tint="@color/white" />
+
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="No tens ofertes pendents"
-                        android:textColor="@color/gray_500"
-                        android:textSize="15sp" />
+                        android:layout_marginStart="16dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-black"
+                            android:text="@string/ver_mis_ofertas"
+                            android:textColor="@color/white"
+                            android:textSize="18sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/gestiona_presupuestos"
+                            android:textColor="@color/brand_50"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -124,7 +135,7 @@
                 android:layout_marginBottom="8dp"
                 android:layout_marginHorizontal="24dp"
                 android:fontFamily="sans-serif-black"
-                android:text="Comandes Actives Recents"
+                android:text="@string/comandes_actives_recents"
                 android:textColor="@color/gray_900"
                 android:textSize="18sp" />
 

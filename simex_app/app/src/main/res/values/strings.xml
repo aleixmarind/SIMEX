@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">simex_app</string>
+    <string name="ver_mis_ofertas">Ver mis ofertas</string>
+    <string name="gestiona_presupuestos">Gestiona presupuestos</string>
+    <string name="comandes_actives_recents">Comandes actives recents</string>
+    <string name="mis_ofertas">Mis ofertas</string>
+    <string name="presupuestos_cotizaciones">Presupuestos y cotizaciones</string>
 </resources>

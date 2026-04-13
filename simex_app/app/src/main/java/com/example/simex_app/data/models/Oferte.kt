@@ -28,7 +28,7 @@ data class Oferte(
     val nombreOferta: String?,
     val fechaEnvio: String?,
     val fechaEntrega: String?,
-    val numPedido: Int?,
+    val numPedido: String?,
     val idFreight: Int?,
     val active: Int,
 
