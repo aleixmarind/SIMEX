@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using smiex_api.Models;
+using smiex_api.DTOs; // Asegúrate de que tus DTOs estén aquí
 
 namespace smiex_api.Controllers
 {
@@ -20,97 +20,75 @@ namespace smiex_api.Controllers
             _context = context;
         }
 
-        // GET: api/Ofertes
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Oferte>>> GetOfertes()
+        // 1. OBTENER PENDIENTES
+        [HttpGet("Pendientes/{clienteId}")]
+        public async Task<ActionResult<IEnumerable<ComandaResumenDTO>>> GetOfertasPendientes(int clienteId)
         {
-            return await _context.Ofertes.ToListAsync();
+            return await ObtenerOfertasConTracking(clienteId, 1);
         }
 
-        // GET: api/Ofertes/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Oferte>> GetOferte(int id)
+        // 2. OBTENER ACEPTADAS
+        [HttpGet("Comandas/{clienteId}")]
+        public async Task<ActionResult<IEnumerable<ComandaResumenDTO>>> GetComandasAceptadas(int clienteId)
         {
-            var oferte = await _context.Ofertes.FindAsync(id);
-
-            if (oferte == null)
-            {
-                return NotFound();
-            }
-
-            return oferte;
+            return await ObtenerOfertasConTracking(clienteId, 2);
         }
 
-        // PUT: api/Ofertes/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutOferte(int id, Oferte oferte)
+        // 4. ESTADÍSTICAS GLOBALES PARA EL AGENTE
+        [HttpGet("Agente/Stats")]
+        public async Task<ActionResult<Dictionary<string, int>>> GetAgenteStats()
         {
-            if (id != oferte.Id)
+            var stats = new Dictionary<string, int>
             {
-                return BadRequest();
-            }
-
-            _context.Entry(oferte).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!OferteExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
+                { "activas", await _context.Ofertes.CountAsync(o => o.EstatOfertaId == 2 && o.Active == 1) },
+                { "ofertas", await _context.Ofertes.CountAsync(o => o.EstatOfertaId == 1 && o.Active == 1) }
+            };
+            return Ok(stats);
         }
 
-        // POST: api/Ofertes
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<Oferte>> PostOferte(Oferte oferte)
+        // 5. OBTENER COMANDAS RECIENTES (GLOBAL) - Para el Dashboard del Agente
+        [HttpGet("Agente/Recientes")]
+        public async Task<ActionResult<IEnumerable<ComandaResumenDTO>>> GetComandasGlobales()
         {
-            _context.Ofertes.Add(oferte);
+            return await ObtenerOfertasConTracking(null, 2, 10);
+        }
+
+        // 6. ACTUALIZAR TRACKING (Para cuando el agente avance el estado)
+        [HttpPost("{id}/tracking")]
+        public async Task<IActionResult> ActualizarTracking(int id, [FromBody] int nuevoTrackingId)
+        {
+            var oferta = await _context.Ofertes.FindAsync(id);
+            if (oferta == null) return NotFound();
+
+            oferta.TrackingActualId = nuevoTrackingId;
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetOferte", new { id = oferte.Id }, oferte);
+            return Ok(new { mensaje = "Tracking actualizado correctamente" });
         }
 
-        // DELETE: api/Ofertes/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteOferte(int id)
+        // 3. POST DECISIÓN
+        [HttpPost("{id}/decidir")]
+        public async Task<IActionResult> DecidirOferta(int id, [FromBody] DecisionOfertaDTO decision)
         {
-            var oferte = await _context.Ofertes.FindAsync(id);
-            if (oferte == null)
+            var oferta = await _context.Ofertes.FindAsync(id);
+            if (oferta == null) return NotFound();
+
+            oferta.EstatOfertaId = decision.Aceptada ? 2 : 3;
+            if (!decision.Aceptada)
             {
-                return NotFound();
+                oferta.RaoRebuig = decision.MotivoRechazo;
             }
 
-            _context.Ofertes.Remove(oferte);
             await _context.SaveChangesAsync();
-
-            return NoContent();
+            return Ok(new { mensaje = "Decisión procesada correctamente" });
         }
 
-        private bool OferteExists(int id)
+        // MÉTODO CENTRALIZADO Y SEGURO
+        private async Task<ActionResult<IEnumerable<ComandaResumenDTO>>> ObtenerOfertasConTracking(int? clienteId, int estadoId, int? limite = null)
         {
-            return _context.Ofertes.Any(e => e.Id == id);
-        }
-
-        // GET: api/Ofertes/Cliente/1004
-        [HttpGet("Cliente/{clienteId}")]
-        public async Task<ActionResult<IEnumerable<ComandaResumenDTO>>> GetComandasPorCliente(int clienteId)
-        {
-            // 1. Obtenemos todos los pasos posibles para el tracking (del 1 al 9)
-            var todosLosPasos = await _context.TrackingSteps
-                .Where(s => s.Id <= 9) // Solo tomamos la primera tanda de pasos
+            // 1. Traer los pasos de tracking a memoria (1 al 9)
+            var pasos = await _context.TrackingSteps
+                .Where(s => s.Id <= 9)
                 .OrderBy(s => s.Ordre)
                 .Select(s => new TrackingStepDTO
                 {
@@ -119,35 +97,41 @@ namespace smiex_api.Controllers
                     Nom = s.Nom
                 }).ToListAsync();
 
-            // 2. Obtenemos las ofertas del cliente
-            var comandas = await _context.Ofertes
+            // 2. Traer las ofertas
+            var query = _context.Ofertes
                 .Include(o => o.PortOrigen)
                 .Include(o => o.PortDesti)
                 .Include(o => o.EstatOferta)
-                .Where(o => o.ClientId == clienteId && o.Active == 1)
-                .Select(o => new ComandaResumenDTO
-                {
-                    Id = o.Id,
-                    NumPedido = o.NumPedido.ToString(),
-                    NombreOferta = o.NombreOferta,
-                    PuertoOrigen = o.PortOrigen != null ? o.PortOrigen.Nom : "Sin Puerto",
-                    PuertoDestino = o.PortDesti != null ? o.PortDesti.Nom : "Sin Puerto",
-                    Estado = o.EstatOferta.Estat,
-                    FechaEntrega = o.FechaEntrega.HasValue ? o.FechaEntrega.Value.ToString("dd/MM/yyyy") : "Pendiente",
+                .Where(o => o.Active == 1 && o.EstatOfertaId == estadoId);
 
-                    // --- AQUÍ ESTÁ LA MAGIA ---
-                    TrackingActualId = o.TrackingActualId, // El ID de la tabla ofertes
-                    PasosSeguimiento = todosLosPasos    // Metemos la lista de los 9 pasos
-                })
-                .ToListAsync();
-
-            if (comandas == null || !comandas.Any())
+            if (clienteId.HasValue)
             {
-                return NotFound();
+                query = query.Where(o => o.ClientId == clienteId.Value);
             }
 
-            return Ok(comandas);
-        }
+            query = query.OrderByDescending(o => o.Id);
 
+            if (limite.HasValue)
+            {
+                query = query.Take(limite.Value);
+            }
+
+            var ofertas = await query.ToListAsync();
+
+            var resultado = ofertas.Select(o => new ComandaResumenDTO
+            {
+                Id = o.Id,
+                NumPedido = string.IsNullOrWhiteSpace(o.NumPedido) ? "N/A" : o.NumPedido,
+                NombreOferta = o.NombreOferta,
+                PuertoOrigen = o.PortOrigen?.Nom ?? "Sin Puerto",
+                PuertoDestino = o.PortDesti?.Nom ?? "Sin Puerto",
+                Estado = o.EstatOferta?.Estat ?? "Desconocido",
+                FechaEntrega = o.FechaEntrega?.ToString("dd/MM/yyyy") ?? "Pendiente",
+                TrackingActualId = o.TrackingActualId,
+                PasosSeguimiento = pasos
+            }).ToList();
+
+            return Ok(resultado);
+        }
     }
 }

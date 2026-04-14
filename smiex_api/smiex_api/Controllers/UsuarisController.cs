@@ -29,17 +29,27 @@ namespace smiex_api.Controllers
         }
 
         // GET: api/Usuaris/5
+        // GET: api/Usuaris/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Usuari>> GetUsuari(int id)
+        public async Task<ActionResult> GetUsuari(int id)
         {
-            var usuari = await _context.Usuaris.FindAsync(id);
+            // 1. Buscamos el usuario SIN incluir relaciones pesadas
+            var usuari = await _context.Usuaris
+                .AsNoTracking() // Mejora el rendimiento
+                .FirstOrDefaultAsync(u => u.Id == id);
 
-            if (usuari == null)
+            if (usuari == null) return NotFound();
+
+            // 2. Devolvemos un objeto anónimo plano (Esto NUNCA da error 500)
+            return Ok(new
             {
-                return NotFound();
-            }
-
-            return usuari;
+                id = usuari.Id,
+                nom = usuari.Nom,
+                cognoms = usuari.Cognoms,
+                correu = usuari.Correu,
+                rolId = usuari.RolId,
+                active = usuari.Active
+            });
         }
 
         // PUT: api/Usuaris/5
@@ -133,7 +143,8 @@ namespace smiex_api.Controllers
                 Nombre = usuari.Nom,
                 Email = usuari.Correu,
                 RolId = usuari.RolId,
-                Tipo = (usuari.RolId == 1) ? "Agente" : "Cliente",
+                // 1004 = Cliente en la base de datos, el resto son Agentes
+                Tipo = (usuari.RolId == 1004) ? "Cliente" : "Agente",
                 NombreRolReal = usuari.Rol?.Rol1
             };
 

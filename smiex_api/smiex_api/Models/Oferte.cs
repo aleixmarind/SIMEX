@@ -60,7 +60,7 @@ public partial class Oferte
 
     public DateOnly? FechaEntrega { get; set; }
 
-    public int? NumPedido { get; set; }
+    public string? NumPedido { get; set; }
 
     public int? IdFreight { get; set; }
 

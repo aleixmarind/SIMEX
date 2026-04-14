@@ -1,4 +1,7 @@
-﻿public class ComandaResumenDTO
+﻿
+
+
+public class ComandaResumenDTO
 {
     public int Id { get; set; }
     public string? NumPedido { get; set; }
