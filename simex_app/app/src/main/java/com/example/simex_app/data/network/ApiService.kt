@@ -18,6 +18,7 @@ interface ApiService {
     @GET("api/Usuaris/{id}")
     suspend fun getUsuario(@Path("id") id: Int): Usuari
 
+    // --- CLIENTE ---
     @GET("api/Ofertes/Comandas/{id}")
     suspend fun getComandas(@Path("id") clienteId: Int): List<Comanda>
 
@@ -26,5 +27,15 @@ interface ApiService {
 
     @POST("api/Ofertes/{id}/decidir")
     suspend fun decidirOferta(@Path("id") id: Int, @Body decision: DecisionOfertaDTO): Response<Unit>
+
+    // --- AGENTE ---
+    @GET("api/Ofertes/Agente/Stats")
+    suspend fun getAgenteStats(): Map<String, Int>
+
+    @GET("api/Ofertes/Agente/Recientes")
+    suspend fun getComandasGlobales(): List<Comanda>
+
+    @POST("api/Ofertes/{id}/tracking")
+    suspend fun actualizarTracking(@Path("id") id: Int, @Body nuevoTrackingId: Int): Response<Unit>
 
 }

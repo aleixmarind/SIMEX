@@ -23,7 +23,7 @@ class PerfilActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val clienteId = intent.getIntExtra("CLIENTE_ID", 1004)
-        val nombreUsuario = intent.getStringExtra("USER_NAME") ?: "Cliente"
+        val nombreUsuario = intent.getStringExtra("USER_NAME") ?: "Usuario"
 
         setupBottomNavigation(clienteId, nombreUsuario)
         obtenerDatosPerfil(clienteId)
@@ -46,7 +46,9 @@ class PerfilActivity : AppCompatActivity() {
                 binding.tvFullName.text = "${usuario.nom} ${usuario.cognoms}"
                 binding.tvEmail.text = usuario.correu
                 binding.tvUserId.text = "#${usuario.id}"
-                binding.tvUserRole.text = "CLIENTE" // Hardcoded como pediste o podrías mapear usuario.rolId
+                
+                // Determinamos el rol según el ID (1004 Cliente, 1005 Agente según tu SQL)
+                binding.tvUserRole.text = if (usuario.rolId == 1004) "CLIENTE" else "AGENTE"
 
             } catch (e: Exception) {
                 Log.e("PERFIL_ERROR", "Error al obtener perfil", e)
@@ -60,7 +62,11 @@ class PerfilActivity : AppCompatActivity() {
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_home -> {
-                    val intent = Intent(this, HomePageClienteActivity::class.java)
+                    // Para saber a qué Home volver, miramos el texto del rol actual
+                    val esAgente = binding.tvUserRole.text == "AGENTE"
+                    val destination = if (esAgente) HomePageAgenteActivity::class.java else HomePageClienteActivity::class.java
+                    
+                    val intent = Intent(this, destination)
                     intent.putExtra("CLIENTE_ID", clienteId)
                     intent.putExtra("USER_NAME", nombreUsuario)
                     startActivity(intent)
