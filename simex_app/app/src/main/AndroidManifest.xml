@@ -48,6 +48,11 @@
             android:exported="false"
             android:label="Mis Ofertas" />
 
+        <activity
+            android:name=".ui.screens.PerfilActivity"
+            android:exported="false"
+            android:label="Mi Perfil" />
+
     </application>
 
 </manifest>

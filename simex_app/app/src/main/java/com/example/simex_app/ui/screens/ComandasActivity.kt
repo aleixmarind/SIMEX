@@ -72,7 +72,11 @@ class ComandasActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_perfil -> {
-                    Toast.makeText(this, "Ir al Perfil", Toast.LENGTH_SHORT).show()
+                    val intent = Intent(this, PerfilActivity::class.java)
+                    intent.putExtra("CLIENTE_ID", clienteId)
+                    intent.putExtra("USER_NAME", nombreUsuario)
+                    startActivity(intent)
+                    finish()
                     true
                 }
                 else -> false

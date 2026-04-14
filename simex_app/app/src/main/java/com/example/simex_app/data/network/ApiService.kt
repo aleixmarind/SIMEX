@@ -3,6 +3,7 @@ package com.example.simex_app.data.network
 import com.example.simex_app.data.models.Comanda
 import com.example.simex_app.data.models.DecisionOfertaDTO
 import com.example.simex_app.data.models.LoginResponse
+import com.example.simex_app.data.models.Usuari
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -13,6 +14,9 @@ interface ApiService {
 
     @POST("api/Usuaris/login")
     suspend fun login(@Body datos: Map<String, String>): Response<LoginResponse>
+
+    @GET("api/Usuaris/{id}")
+    suspend fun getUsuario(@Path("id") id: Int): Usuari
 
     @GET("api/Ofertes/Comandas/{id}")
     suspend fun getComandas(@Path("id") clienteId: Int): List<Comanda>

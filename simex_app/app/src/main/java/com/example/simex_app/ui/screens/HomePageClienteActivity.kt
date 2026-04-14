@@ -73,7 +73,10 @@ class HomePageClienteActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_perfil -> {
-                    Toast.makeText(this, "Ir al Perfil", Toast.LENGTH_SHORT).show()
+                    val intentPerfil = Intent(this, PerfilActivity::class.java)
+                    intentPerfil.putExtra("CLIENTE_ID", clienteId)
+                    intentPerfil.putExtra("USER_NAME", nombreUsuario)
+                    startActivity(intentPerfil)
                     true
                 }
                 else -> false

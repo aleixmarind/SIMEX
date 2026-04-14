@@ -1,15 +1,12 @@
 package com.example.simex_app.data.models
 
+import com.google.gson.annotations.SerializedName
+
 data class Usuari(
-    val active: Int,
-    val cognoms: String,
-    val contrasenya: String,
-    val correu: String,
-    val id: Int,
-    val nom: String,
-    val notificacioneIdUserrecieveNavigations: List<Any>,
-    val notificacioneIdUsersendNavigations: List<Any>,
-    val ofertes: List<Any>,
-    val rol: Any,
-    val rolId: Int
+    @SerializedName("id", alternate = ["Id"]) val id: Int,
+    @SerializedName("nom", alternate = ["Nom"]) val nom: String,
+    @SerializedName("cognoms", alternate = ["Cognoms"]) val cognoms: String,
+    @SerializedName("correu", alternate = ["Correu"]) val correu: String,
+    @SerializedName("rolId", alternate = ["RolId"]) val rolId: Int,
+    @SerializedName("active", alternate = ["Active"]) val active: Int
 )
