@@ -30,7 +30,8 @@ class HomePageAgenteActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_homepageagente)
 
-        val agenteId = intent.getIntExtra("CLIENTE_ID", 1004)
+        // Usamos -1 para detectar si el login nos pasó el ID real
+        val agenteId = intent.getIntExtra("CLIENTE_ID", -1)
         val nombreAgente = intent.getStringExtra("USER_NAME") ?: "Agente"
 
         val tvWelcomeName = findViewById<TextView>(R.id.tvWelcomeName)
@@ -48,11 +49,6 @@ class HomePageAgenteActivity : AppCompatActivity() {
         bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_home -> true
-                R.id.nav_comandas -> {
-                    // Por ahora recargamos esta misma o mostramos un aviso
-                    Toast.makeText(this, "Ya estás en el panel global", Toast.LENGTH_SHORT).show()
-                    true
-                }
                 R.id.nav_perfil -> {
                     val intentPerfil = Intent(this, PerfilActivity::class.java)
                     intentPerfil.putExtra("CLIENTE_ID", agenteId)
@@ -69,7 +65,7 @@ class HomePageAgenteActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         rvRecentOrders.layoutManager = LinearLayoutManager(this)
         adapter = ComandaAdapter(emptyList()) { comanda ->
-            // --- CAMBIO AQUÍ: Navegar al detalle especial de Agente ---
+            // Abrimos el detalle de gestión (Solo para agentes)
             val intent = Intent(this, DetalleComandaAgenteActivity::class.java)
             intent.putExtra("DETALLE_COMANDA", comanda)
             startActivity(intent)
@@ -101,6 +97,7 @@ class HomePageAgenteActivity : AppCompatActivity() {
 
             } catch (e: Exception) {
                 Log.e("AGENTE_HOME_ERROR", "Error: ${e.message}")
+                Toast.makeText(this@HomePageAgenteActivity, "Error de red", Toast.LENGTH_SHORT).show()
             }
         }
     }
