@@ -17,21 +17,21 @@ namespace smiex_api.Controllers
 
         public OfertesController(Simex05Context context) { _context = context; }
 
-        // 1. CLIENTE: OBTENER PENDIENTES
+        //cliente: obtener ofertas pendientes
         [HttpGet("Pendientes/{clienteId}")]
         public async Task<ActionResult<IEnumerable<ComandaResumenDTO>>> GetOfertasPendientes(int clienteId)
         {
             return await ObtenerOfertasConTracking(clienteId, 1);
         }
 
-        // 2. CLIENTE: OBTENER ACEPTADAS
+        //cliente: obtener ofertas aceptadas
         [HttpGet("Comandas/{clienteId}")]
         public async Task<ActionResult<IEnumerable<ComandaResumenDTO>>> GetComandasAceptadas(int clienteId)
         {
             return await ObtenerOfertasConTracking(clienteId, 2);
         }
 
-        // 3. AGENTE: STATS GLOBALES
+        //agente: estadisticas de activas etc (revisar aun)
         [HttpGet("Agente/Stats")]
         public async Task<ActionResult> GetAgenteStats()
         {
@@ -42,11 +42,11 @@ namespace smiex_api.Controllers
             return Ok(stats);
         }
 
-        // 4. AGENTE: TODAS LAS COMANDAS (GLOBAL)
+        //agente: muestra todas las comandas que hay en global al agente
         [HttpGet("Agente/Recientes")]
         public async Task<ActionResult<IEnumerable<ComandaResumenDTO>>> GetComandasGlobales()
         {
-            // Pasamos null en clienteId para que traiga TODO lo del sistema
+            // el null para que no filtre y salgan todas las ofertas/comandas
             return await ObtenerOfertasConTracking(null, 2);
         }
 
@@ -62,36 +62,69 @@ namespace smiex_api.Controllers
             return Ok(new { mensaje = "Tracking actualizado" });
         }
 
-        // MÉTODO MAESTRO (Ahora soporta Agente y Cliente)
+        // (Agente y Cliente)
         private async Task<ActionResult<IEnumerable<ComandaResumenDTO>>> ObtenerOfertasConTracking(int? clienteId, int estadoId)
         {
-            var pasos = await _context.TrackingSteps.Where(s => s.Id <= 9).OrderBy(s => s.Ordre)
-                .Select(s => new TrackingStepDTO { Id = s.Id, Ordre = s.Ordre ?? 0, Nom = s.Nom }).ToListAsync();
+            // 1. Conseguir los pasos (Lista normal)
+            var pasos = await _context.TrackingSteps
+                .Where(s => s.Id <= 9)
+                .OrderBy(s => s.Ordre)
+                .ToListAsync();
 
-            var query = _context.Ofertes.Include(o => o.PortOrigen).Include(o => o.PortDesti).Include(o => o.EstatOferta)
-                .Where(o => o.Active == 1 && o.EstatOfertaId == estadoId);
+            var listaPasosDTO = new List<TrackingStepDTO>();
+            foreach (var p in pasos)
+            {
+                listaPasosDTO.Add(new TrackingStepDTO
+                {
+                    Id = p.Id,
+                    Ordre = p.Ordre ?? 0,
+                    Nom = p.Nom
+                });
+            }
 
-            // Si hay ID, es cliente (filtro). Si es null, es agente (ve todo).
-            if (clienteId.HasValue) query = query.Where(o => o.ClientId == clienteId.Value);
+            // 2. Conseguir las ofertas (Lista normal)
+            // Usamos .ToList() para traerlo todo a la memoria y trabajar tranquilo
+            var ofertas = await _context.Ofertes
+                .Include(o => o.PortOrigen)
+                .Include(o => o.PortDesti)
+                .Include(o => o.EstatOferta)
+                .Where(o => o.Active == 1 && o.EstatOfertaId == estadoId)
+                .ToListAsync();
 
-            var ofertas = await query.OrderByDescending(o => o.Id).ToListAsync();
+            // 3. Filtrar manualmente (si es cliente)
+            var listaFinal = new List<Oferte>();
+            foreach (var o in ofertas)
+            {
+                if (clienteId == null || o.ClientId == clienteId)
+                {
+                    listaFinal.Add(o);
+                }
+            }
 
-            var resultado = ofertas.Select(o => new ComandaResumenDTO {
-                Id = o.Id,
-                NumPedido = o.NumPedido ?? "N/A",
-                NombreOferta = o.NombreOferta,
-                PuertoOrigen = o.PortOrigen?.Nom ?? "N/A",
-                PuertoDestino = o.PortDesti?.Nom ?? "N/A",
-                Estado = o.EstatOferta?.Estat,
-                FechaEntrega = o.FechaEntrega?.ToString("dd/MM/yyyy") ?? "Pendiente",
-                TrackingActualId = o.TrackingActualId,
-                PasosSeguimiento = pasos
-            });
+            // 4. Crear la lista final de resultados (El "bucle de mapeo")
+            var resultado = new List<ComandaResumenDTO>();
+            foreach (var o in listaFinal)
+            {
+                var dto = new ComandaResumenDTO();
+                dto.Id = o.Id;
+                dto.NumPedido = (o.NumPedido != null) ? o.NumPedido.ToString() : "N/A";
+                dto.NombreOferta = o.NombreOferta;
+
+                // Comprobar manualmente cada objeto relacionado
+                dto.PuertoOrigen = (o.PortOrigen != null) ? o.PortOrigen.Nom : "Sin Puerto";
+                dto.PuertoDestino = (o.PortDesti != null) ? o.PortDesti.Nom : "Sin Puerto";
+                dto.Estado = (o.EstatOferta != null) ? o.EstatOferta.Estat : "Desconocido";
+                dto.FechaEntrega = (o.FechaEntrega != null) ? o.FechaEntrega.Value.ToString("dd/MM/yyyy") : "Pendiente";
+                dto.TrackingActualId = o.TrackingActualId;
+                dto.PasosSeguimiento = listaPasosDTO;
+
+                resultado.Add(dto);
+            }
 
             return Ok(resultado);
         }
 
-        // 6. CLIENTE: ACEPTAR O RECHAZAR OFERTA
+        //cliente: aceptar o rechazar oferta (comprobar mensaje de motivo rechazo) 
         [HttpPost("{id}/decidir")]
         public async Task<IActionResult> DecidirOferta(int id, [FromBody] DecisionOfertaDTO decision)
         {

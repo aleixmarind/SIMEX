@@ -21,17 +21,14 @@ namespace smiex_api.Controllers
             _context = context;
         }
 
-       
-
-        // GET: api/Usuaris/5
         // GET: api/Usuaris/5
         [HttpGet("{id}")]
         public async Task<ActionResult> GetUsuari(int id)
         {
             // 1. Buscamos el usuario SIN incluir relaciones pesadas
             var usuari = await _context.Usuaris
-                .AsNoTracking() // Mejora el rendimiento
-                .FirstOrDefaultAsync(u => u.Id == id);
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == id); 
 
             if (usuari == null) return NotFound();
 
@@ -56,8 +53,7 @@ namespace smiex_api.Controllers
             {
                 return BadRequest(new { message = "Datos incompletos" });
             }
-
-            // 2. Buscamos en la base de datos INCLUYENDO la tabla Rol
+                                                                                                                                                 
             var usuari = await _context.Usuaris
                 .Include(u => u.Rol) // Esto es vital para que NombreRolReal no sea nulo
                 .FirstOrDefaultAsync(u => u.Correu == userText && u.Contrasenya == password);
