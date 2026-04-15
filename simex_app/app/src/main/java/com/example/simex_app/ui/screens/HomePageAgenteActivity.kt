@@ -30,7 +30,6 @@ class HomePageAgenteActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_homepageagente)
 
-        // Usamos -1 para detectar si el login nos pasó el ID real
         val agenteId = intent.getIntExtra("CLIENTE_ID", -1)
         val nombreAgente = intent.getStringExtra("USER_NAME") ?: "Agente"
 
@@ -49,6 +48,13 @@ class HomePageAgenteActivity : AppCompatActivity() {
         bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_home -> true
+                R.id.nav_comandas -> {
+                    val intentComandas = Intent(this, ComandasAgenteActivity::class.java)
+                    intentComandas.putExtra("CLIENTE_ID", agenteId)
+                    intentComandas.putExtra("USER_NAME", nombreAgente)
+                    startActivity(intentComandas)
+                    true
+                }
                 R.id.nav_perfil -> {
                     val intentPerfil = Intent(this, PerfilActivity::class.java)
                     intentPerfil.putExtra("CLIENTE_ID", agenteId)
@@ -65,7 +71,6 @@ class HomePageAgenteActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         rvRecentOrders.layoutManager = LinearLayoutManager(this)
         adapter = ComandaAdapter(emptyList()) { comanda ->
-            // Abrimos el detalle de gestión (Solo para agentes)
             val intent = Intent(this, DetalleComandaAgenteActivity::class.java)
             intent.putExtra("DETALLE_COMANDA", comanda)
             startActivity(intent)
@@ -87,7 +92,7 @@ class HomePageAgenteActivity : AppCompatActivity() {
                 }
 
                 if (comandas.isNotEmpty()) {
-                    adapter.updateList(comandas)
+                    adapter.updateList(comandas.take(3))
                     rvRecentOrders.visibility = View.VISIBLE
                     cardNoOrders.visibility = View.GONE
                 } else {

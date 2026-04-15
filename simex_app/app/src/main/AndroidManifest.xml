@@ -39,6 +39,11 @@
             android:label="Mis Comandas" />
 
         <activity
+            android:name=".ui.screens.ComandasAgenteActivity"
+            android:exported="false"
+            android:label="Comandas Globales" />
+
+        <activity
             android:name=".ui.screens.DetalleComandaActivity"
             android:exported="false"
             android:label="Detalle de Comanda" />
