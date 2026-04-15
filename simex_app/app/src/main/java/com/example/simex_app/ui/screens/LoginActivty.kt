@@ -48,7 +48,7 @@ class LoginActivity : AppCompatActivity() {
 
                     when (loginRes?.tipo) {
                         "Agente" -> {
-                            Log.d("LOGIN_DEBUG", "Redirigiendo a HomePageAgente")
+                            Log.d("LOGIN_DEBUG", "RedHomePageAgenteirigiendo a ")
                             val intent = Intent(this@LoginActivity, HomePageAgenteActivity::class.java)
                             intent.putExtra("USER_NAME", loginRes.nombre)
                             intent.putExtra("CLIENTE_ID", loginRes.id)

@@ -10,7 +10,7 @@ object RetrofitClient {
     val instance: ApiService by lazy {
         val retrofit = Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create()) // Traduce JSON a Kotlin
+            .addConverterFactory(GsonConverterFactory.create())
             .build()
 
         retrofit.create(ApiService::class.java)
