@@ -90,5 +90,42 @@ namespace smiex_api.Controllers
 
             return Ok(resultado);
         }
+
+        // 6. CLIENTE: ACEPTAR O RECHAZAR OFERTA
+        [HttpPost("{id}/decidir")]
+        public async Task<IActionResult> DecidirOferta(int id, [FromBody] DecisionOfertaDTO decision)
+        {
+            // Buscamos la oferta en la base de datos
+            var oferta = await _context.Ofertes.FindAsync(id);
+            if (oferta == null) return NotFound(new { mensaje = "Oferta no encontrada" });
+
+            if (decision.Aceptada)
+            {
+                // Si acepta: Cambiamos el estado a 2 (Comanda Activa)
+                oferta.EstatOfertaId = 2;
+
+                // Opcional: Inicializamos el tracking en el primer paso si no tiene uno
+                if (oferta.TrackingActualId == null || oferta.TrackingActualId == 0)
+                {
+                    oferta.TrackingActualId = 1;
+                }
+            }
+            else
+            {
+                // Si rechaza: Marcamos como no activa o cambiamos a un estado de "Rechazada"
+                oferta.Active = 0;
+                oferta.RaoRebuig = decision.MotivoRechazo; // Asegúrate de que este campo exista en tu BD
+            }
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                return Ok(new { mensaje = decision.Aceptada ? "Oferta convertida en comanda" : "Oferta rechazada" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = "Error al guardar: " + ex.Message });
+            }
+        }   
     }
 }
