@@ -25,8 +25,14 @@ class ComandasActivity : AppCompatActivity() {
             binding = ActivityComandaBinding.inflate(layoutInflater)
             setContentView(binding.root)
 
-            val clienteId = intent.getIntExtra("CLIENTE_ID", 1004)
-            val nombreUsuario = intent.getStringExtra("USER_NAME") ?: "Cliente"
+            val clienteId = intent.getIntExtra("CLIENTE_ID", -1)
+            val nombreUsuario = intent.getStringExtra("USER_NAME")
+
+            if (clienteId == -1) {
+                Toast.makeText(this, "Error: No se ha encontrado el ID del cliente", Toast.LENGTH_SHORT).show()
+                finish()
+                return
+            }
 
             setupRecyclerView()
             setupBottomNavigation(clienteId, nombreUsuario)
@@ -49,7 +55,7 @@ class ComandasActivity : AppCompatActivity() {
         binding.rvComandas.adapter = adapter
     }
 
-    private fun setupBottomNavigation(clienteId: Int, nombreUsuario: String) {
+    private fun setupBottomNavigation(clienteId: Int, nombreUsuario: String?) {
         binding.bottomNavigation.selectedItemId = R.id.nav_comandas
         
         binding.bottomNavigation.setOnItemSelectedListener { item ->

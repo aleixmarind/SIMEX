@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -15,91 +16,83 @@ import com.example.simex_app.data.models.Comanda
 import com.example.simex_app.data.models.DecisionOfertaDTO
 import com.example.simex_app.data.network.RetrofitClient
 import com.example.simex_app.databinding.ActivityOfertasBinding
-import com.example.simex_app.databinding.DialogDecisionOfertaBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class OfertasActivity : AppCompatActivity() {
+class OfertasActivity : AppCompatActivity(), OnOfertaDecisionListener {
 
     private lateinit var binding: ActivityOfertasBinding
     private lateinit var adapter: OfertaAdapter
+    private var clienteId: Int = -1
+    private var nombreUsuario: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityOfertasBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val clienteId = intent.getIntExtra("CLIENTE_ID", 1004)
-        val nombreUsuario = intent.getStringExtra("USER_NAME") ?: "Cliente"
+        clienteId = intent.getIntExtra("CLIENTE_ID", -1)
+        nombreUsuario = intent.getStringExtra("USER_NAME")
 
-        setupRecyclerView(clienteId, nombreUsuario)
-        setupBottomNavigation(clienteId, nombreUsuario)
+        if (clienteId == -1) {
+            Toast.makeText(this, "Error: No se ha encontrado el ID del cliente", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+
+        setupRecyclerView()
+        setupBottomNavigation()
         obtenerOfertas(clienteId)
     }
 
-    private fun setupRecyclerView(clienteId: Int, nombreUsuario: String) {
+    private fun setupRecyclerView() {
         binding.rvOfertas.layoutManager = LinearLayoutManager(this)
-        adapter = OfertaAdapter(emptyList()) { oferta ->
-            mostrarDialogoDecisionModerno(oferta, clienteId, nombreUsuario)
-        }
+        adapter = OfertaAdapter(mutableListOf(), this)
         binding.rvOfertas.adapter = adapter
     }
 
-    private fun mostrarDialogoDecisionModerno(oferta: Comanda, clienteId: Int, nombreUsuario: String) {
-        val dialogBinding = DialogDecisionOfertaBinding.inflate(LayoutInflater.from(this))
-        val dialog = AlertDialog.Builder(this, R.style.CustomDialogTheme)
-            .setView(dialogBinding.root)
-            .create()
-
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-
-        dialogBinding.tvDialogTitle.text = "Oferta #${oferta.id}"
-        dialogBinding.tvDialogMessage.text = "¿Deseas aceptar o rechazar el envío a ${oferta.puertoDestino}?"
-
-        // Acción ACEPTAR
-        dialogBinding.btnAceptar.setOnClickListener {
-            dialog.dismiss()
-            enviarDecision(oferta.id, true, null, clienteId, nombreUsuario)
-        }
-
-        // Acción RECHAZAR (Muestra el campo de motivo)
-        dialogBinding.btnRechazar.setOnClickListener {
-            dialogBinding.tvDialogTitle.text = "Rechazar Oferta"
-            dialogBinding.tvDialogMessage.text = "Por favor, indica el motivo del rechazo."
-            dialogBinding.tilMotivo.visibility = View.VISIBLE
-            dialogBinding.btnAceptar.visibility = View.GONE
-            dialogBinding.btnRechazar.visibility = View.GONE
-            dialogBinding.btnEnviarRechazo.visibility = View.VISIBLE
-        }
-
-        // Acción ENVIAR RECHAZO (Con validación)
-        dialogBinding.btnEnviarRechazo.setOnClickListener {
-            val motivo = dialogBinding.etMotivo.text.toString()
-            if (motivo.isNotBlank()) {
-                dialog.dismiss()
-                enviarDecision(oferta.id, false, motivo, clienteId, nombreUsuario)
-            } else {
-                dialogBinding.tilMotivo.error = "El motivo es obligatorio"
+    override fun onAceptar(oferta: Comanda) {
+        AlertDialog.Builder(this)
+            .setTitle("Aceptar Oferta")
+            .setMessage("¿Estás seguro de que quieres aceptar la oferta #${oferta.id}?")
+            .setPositiveButton("Sí") { _, _ ->
+                enviarDecision(oferta, true, null)
             }
-        }
-
-        dialogBinding.btnCancelar.setOnClickListener { dialog.dismiss() }
-
-        dialog.show()
+            .setNegativeButton("No", null)
+            .show()
     }
 
-    private fun enviarDecision(id: Int, aceptada: Boolean, motivo: String?, clienteId: Int, nombreUsuario: String) {
+    override fun onRechazar(oferta: Comanda) {
+        val input = EditText(this)
+        input.hint = "Motivo del rechazo"
+        
+        AlertDialog.Builder(this)
+            .setTitle("Rechazar Oferta")
+            .setView(input)
+            .setPositiveButton("Enviar") { _, _ ->
+                val motivo = input.text.toString()
+                if (motivo.isNotBlank()) {
+                    enviarDecision(oferta, false, motivo)
+                } else {
+                    Toast.makeText(this, "El motivo es obligatorio", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun enviarDecision(oferta: Comanda, aceptada: Boolean, motivo: String?) {
         lifecycleScope.launch {
             try {
                 val response = withContext(Dispatchers.IO) {
-                    RetrofitClient.instance.decidirOferta(id, DecisionOfertaDTO(aceptada, motivo))
+                    RetrofitClient.instance.decidirOferta(oferta.id, DecisionOfertaDTO(aceptada, motivo))
                 }
                 
                 if (response.isSuccessful) {
                     val msg = if (aceptada) "¡Oferta aceptada con éxito!" else "Oferta rechazada"
                     Toast.makeText(this@OfertasActivity, msg, Toast.LENGTH_SHORT).show()
-                    obtenerOfertas(clienteId) 
+                    adapter.removeItem(oferta)
                 } else {
                     Toast.makeText(this@OfertasActivity, "Error en el servidor", Toast.LENGTH_SHORT).show()
                 }
@@ -110,7 +103,7 @@ class OfertasActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupBottomNavigation(clienteId: Int, nombreUsuario: String) {
+    private fun setupBottomNavigation() {
         binding.bottomNavigation.selectedItemId = R.id.nav_home
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
@@ -144,6 +137,7 @@ class OfertasActivity : AppCompatActivity() {
                 adapter.updateList(lista)
             } catch (e: Exception) {
                 Log.e("API", "Error", e)
+                Toast.makeText(this@OfertasActivity, "Error al cargar ofertas", Toast.LENGTH_SHORT).show()
             }
         }
     }

@@ -6,9 +6,14 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.simex_app.data.models.Comanda
 import com.example.simex_app.databinding.ItemOfertaBinding
 
+interface OnOfertaDecisionListener {
+    fun onAceptar(oferta: Comanda)
+    fun onRechazar(oferta: Comanda)
+}
+
 class OfertaAdapter(
-    private var lista: List<Comanda>,
-    private val onItemClick: (Comanda) -> Unit
+    private var lista: MutableList<Comanda>,
+    private val listener: OnOfertaDecisionListener
 ) : RecyclerView.Adapter<OfertaAdapter.OfertaViewHolder>() {
 
     class OfertaViewHolder(val binding: ItemOfertaBinding) : RecyclerView.ViewHolder(binding.root)
@@ -21,20 +26,26 @@ class OfertaAdapter(
     override fun onBindViewHolder(holder: OfertaViewHolder, position: Int) {
         val item = lista[position]
         with(holder.binding) {
-            tvIdOferta.text = "Oferta #${item.id}"
-            tvNombreOferta.text = item.nombreOferta ?: "Sin nombre"
-            tvRutaOferta.text = "${item.puertoOrigen ?: "?"} ➔ ${item.puertoDestino ?: "?"}"
-            tvEstadoOferta.text = item.estado?.uppercase() ?: "PENDIENTE"
-            tvFechaOferta.text = item.fechaEntrega ?: "TBD"
-            
-            root.setOnClickListener { onItemClick(item) }
+            tvNombreOferta.text = item.nombreOferta ?: "Oferta #${item.id}"
+            tvRuta.text = "${item.puertoOrigen ?: "?"} ➔ ${item.puertoDestino ?: "?"}"
+
+            btnAceptar.setOnClickListener { listener.onAceptar(item) }
+            btnRechazar.setOnClickListener { listener.onRechazar(item) }
         }
     }
 
     override fun getItemCount() = lista.size
 
     fun updateList(newList: List<Comanda>) {
-        this.lista = newList
+        this.lista = newList.toMutableList()
         notifyDataSetChanged()
+    }
+
+    fun removeItem(oferta: Comanda) {
+        val index = lista.indexOfFirst { it.id == oferta.id }
+        if (index != -1) {
+            lista.removeAt(index)
+            notifyItemRemoved(index)
+        }
     }
 }

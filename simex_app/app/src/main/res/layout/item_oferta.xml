@@ -28,8 +28,7 @@
                 android:fontFamily="sans-serif-medium"
                 android:text="Oferta #"
                 android:textColor="@color/brand_600"
-                android:textSize="13sp"
-                android:letterSpacing="0.02" />
+                android:textSize="13sp" />
 
             <TextView
                 android:id="@+id/tvEstadoOferta"
@@ -54,32 +53,16 @@
             android:fontFamily="sans-serif-black"
             android:text="Nombre de la Oferta"
             android:textColor="@color/gray_900"
-            android:textSize="18sp"
-            android:letterSpacing="-0.01" />
+            android:textSize="18sp" />
 
-        <LinearLayout
+        <TextView
+            android:id="@+id/tvRuta"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:layout_width="14dp"
-                android:layout_height="14dp"
-                android:src="@android:drawable/ic_menu_directions"
-                app:tint="@color/gray_500" />
-
-            <TextView
-                android:id="@+id/tvRutaOferta"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:fontFamily="sans-serif"
-                android:text="Origen ➔ Destino"
-                android:textColor="@color/gray_500"
-                android:textSize="14sp" />
-        </LinearLayout>
+            android:text="Origen ➔ Destino"
+            android:textColor="@color/gray_500"
+            android:textSize="14sp" />
 
         <View
             android:layout_width="match_parent"
@@ -90,25 +73,27 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <TextView
+            <Button
+                android:id="@+id/btnRechazar"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Fecha estimada"
-                android:textColor="@color/gray_500"
-                android:textSize="12sp" />
+                android:layout_marginEnd="8dp"
+                android:text="Rechazar"
+                android:textColor="@android:color/holo_red_dark"
+                app:strokeColor="@android:color/holo_red_dark" />
 
-            <TextView
-                android:id="@+id/tvFechaOferta"
-                android:layout_width="wrap_content"
+            <Button
+                android:id="@+id/btnAceptar"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
-                android:text="TBD"
-                android:textColor="@color/gray_900"
-                android:textSize="13sp" />
+                android:layout_weight="1"
+                android:backgroundTint="@android:color/holo_green_dark"
+                android:text="Aceptar"
+                android:textColor="@color/white" />
         </LinearLayout>
 
     </LinearLayout>
