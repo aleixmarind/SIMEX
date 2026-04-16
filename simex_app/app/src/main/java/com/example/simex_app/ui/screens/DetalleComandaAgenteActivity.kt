@@ -68,8 +68,7 @@ class DetalleComandaAgenteActivity : AppCompatActivity() {
                     
                     if (response.isSuccessful) {
                         Toast.makeText(this@DetalleComandaAgenteActivity, "Estado avanzado a: ${siguientePaso.nom}", Toast.LENGTH_SHORT).show()
-                        // Recargamos los datos para que se vea el cambio (o cerramos y actualizamos el home)
-                        finish() 
+                        finish()
                     } else {
                         Toast.makeText(this@DetalleComandaAgenteActivity, "Error al actualizar", Toast.LENGTH_SHORT).show()
                     }

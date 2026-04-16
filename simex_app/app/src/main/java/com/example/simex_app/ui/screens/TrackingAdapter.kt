@@ -26,7 +26,7 @@ class TrackingAdapter(
         val paso = pasos[position]
         holder.binding.tvStepName.text = paso.nom
 
-        // Configurar visibilidad de la línea (ocultar la última)
+  
         holder.binding.viewLine.visibility = if (position == pasos.size - 1) View.GONE else View.VISIBLE
 
         // colores tracking
