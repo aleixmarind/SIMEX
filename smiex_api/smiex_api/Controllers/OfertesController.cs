@@ -50,7 +50,7 @@ namespace smiex_api.Controllers
             return await ObtenerOfertasConTracking(null, 2);
         }
 
-        // 5. AGENTE: AVANZAR TRACKING
+        //avanzar tracking (agente)
         [HttpPost("{id}/tracking")]
         public async Task<IActionResult> ActualizarTracking(int id, [FromBody] int nuevoTrackingId)
         {
@@ -65,7 +65,6 @@ namespace smiex_api.Controllers
         // (Agente y Cliente)
         private async Task<ActionResult<IEnumerable<ComandaResumenDTO>>> ObtenerOfertasConTracking(int? clienteId, int estadoId)
         {
-            // 1. Conseguir los pasos (Lista normal)
             var pasos = await _context.TrackingSteps
                 .Where(s => s.Id <= 9)
                 .OrderBy(s => s.Ordre)
@@ -82,8 +81,6 @@ namespace smiex_api.Controllers
                 });
             }
 
-            // 2. Conseguir las ofertas (Lista normal)
-            // Usamos .ToList() para traerlo todo a la memoria y trabajar tranquilo
             var ofertas = await _context.Ofertes
                 .Include(o => o.PortOrigen)
                 .Include(o => o.PortDesti)
@@ -91,7 +88,7 @@ namespace smiex_api.Controllers
                 .Where(o => o.Active == 1 && o.EstatOfertaId == estadoId)
                 .ToListAsync();
 
-            // 3. Filtrar manualmente (si es cliente)
+            // manual cliente con el null para agente
             var listaFinal = new List<Oferte>();
             foreach (var o in ofertas)
             {
@@ -101,7 +98,6 @@ namespace smiex_api.Controllers
                 }
             }
 
-            // 4. Crear la lista final de resultados (El "bucle de mapeo")
             var resultado = new List<ComandaResumenDTO>();
             foreach (var o in listaFinal)
             {
@@ -110,7 +106,7 @@ namespace smiex_api.Controllers
                 dto.NumPedido = (o.NumPedido != null) ? o.NumPedido.ToString() : "N/A";
                 dto.NombreOferta = o.NombreOferta;
 
-                // Comprobar manualmente cada objeto relacionado
+                // Comprobar manualmente cada objeto relacionado (revisar el difrente) 
                 dto.PuertoOrigen = (o.PortOrigen != null) ? o.PortOrigen.Nom : "Sin Puerto";
                 dto.PuertoDestino = (o.PortDesti != null) ? o.PortDesti.Nom : "Sin Puerto";
                 dto.Estado = (o.EstatOferta != null) ? o.EstatOferta.Estat : "Desconocido";
@@ -128,16 +124,13 @@ namespace smiex_api.Controllers
         [HttpPost("{id}/decidir")]
         public async Task<IActionResult> DecidirOferta(int id, [FromBody] DecisionOfertaDTO decision)
         {
-            // Buscamos la oferta en la base de datos
             var oferta = await _context.Ofertes.FindAsync(id);
             if (oferta == null) return NotFound(new { mensaje = "Oferta no encontrada" });
 
             if (decision.Aceptada)
             {
-                // Si acepta: Cambiamos el estado a 2 (Comanda Activa)
                 oferta.EstatOfertaId = 2;
 
-                // Opcional: Inicializamos el tracking en el primer paso si no tiene uno
                 if (oferta.TrackingActualId == null || oferta.TrackingActualId == 0)
                 {
                     oferta.TrackingActualId = 1;
@@ -145,9 +138,9 @@ namespace smiex_api.Controllers
             }
             else
             {
-                // Si rechaza: Marcamos como no activa o cambiamos a un estado de "Rechazada"
+                
                 oferta.Active = 0;
-                oferta.RaoRebuig = decision.MotivoRechazo; // Asegúrate de que este campo exista en tu BD
+                oferta.RaoRebuig = decision.MotivoRechazo;
             }
 
             try
