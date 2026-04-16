@@ -21,7 +21,7 @@ namespace smiex_api.Controllers
             _context = context;
         }
 
-        // GET: api/Usuaris/5
+        // GET: api/Usuaris/
         [HttpGet("{id}")]
         public async Task<ActionResult> GetUsuari(int id)
         {
