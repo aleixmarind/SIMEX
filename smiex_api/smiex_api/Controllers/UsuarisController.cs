@@ -25,14 +25,13 @@ namespace smiex_api.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult> GetUsuari(int id)
         {
-            // 1. Buscamos el usuario SIN incluir relaciones pesadas
+            // buscar user
             var usuari = await _context.Usuaris
                 .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == id); 
 
             if (usuari == null) return NotFound();
 
-            // 2. Devolvemos un objeto anónimo plano (Esto NUNCA da error 500)
             return Ok(new
             {
                 id = usuari.Id,
@@ -47,7 +46,6 @@ namespace smiex_api.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<LoginResponse>> Login([FromBody] Dictionary<string, string> datos)
         {
-            // 1. Extraemos los valores del diccionario
             if (!datos.TryGetValue("usuari", out var userText) ||
                 !datos.TryGetValue("contrasenya", out var password))
             {
@@ -55,23 +53,22 @@ namespace smiex_api.Controllers
             }
                                                                                                                                                  
             var usuari = await _context.Usuaris
-                .Include(u => u.Rol) // Esto es vital para que NombreRolReal no sea nulo
+                .Include(u => u.Rol)
                 .FirstOrDefaultAsync(u => u.Correu == userText && u.Contrasenya == password);
 
-            // 3. Si no existe, error
+      
             if (usuari == null)
             {
                 return Unauthorized(new { message = "Usuario o contraseña incorrectos" });
             }
 
-            // 4. Creamos la respuesta usando el DTO (Aquí ya no te dará error)
+            
             var response = new LoginResponse
             {
                 Id = usuari.Id,
                 Nombre = usuari.Nom,
                 Email = usuari.Correu,
                 RolId = usuari.RolId,
-                // 1004 = Cliente en la base de datos, el resto son Agentes
                 Tipo = (usuari.RolId == 1004) ? "Cliente" : "Agente",
                 NombreRolReal = usuari.Rol?.Rol1
             };
