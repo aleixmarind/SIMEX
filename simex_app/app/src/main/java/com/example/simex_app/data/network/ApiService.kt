@@ -30,7 +30,7 @@ interface ApiService {
 
     // --- AGENTE ---
     @GET("api/Ofertes/Agente/Stats")
-    suspend fun getAgenteStats(): Map<String, Int>
+    suspend fun getAgenteStats(): Map<String, Int> // revisar este de aqui
 
     @GET("api/Ofertes/Agente/Recientes")
     suspend fun getComandasGlobales(): List<Comanda>

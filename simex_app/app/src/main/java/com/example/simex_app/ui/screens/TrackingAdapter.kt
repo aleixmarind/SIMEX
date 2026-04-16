@@ -29,7 +29,7 @@ class TrackingAdapter(
         // Configurar visibilidad de la línea (ocultar la última)
         holder.binding.viewLine.visibility = if (position == pasos.size - 1) View.GONE else View.VISIBLE
 
-        // Lógica de colores según el orden
+        // colores tracking
         when {
             paso.ordre < ordreActual -> {
                 // Completado: Verde
