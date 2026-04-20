@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:usesCleartextTraffic="true"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -12,9 +14,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Simex_app"
-        android:usesCleartextTraffic="true"
-        android:networkSecurityConfig="@xml/network_security_config">
+        android:theme="@style/Theme.Simex_app">
 
         <activity
             android:name=".ui.screens.LoginActivity"
@@ -39,11 +39,6 @@
             android:label="Mis Comandas" />
 
         <activity
-            android:name=".ui.screens.ComandasAgenteActivity"
-            android:exported="false"
-            android:label="Comandas Globales" />
-
-        <activity
             android:name=".ui.screens.DetalleComandaActivity"
             android:exported="false"
             android:label="Detalle de Comanda" />
@@ -62,6 +57,11 @@
             android:name=".ui.screens.DetalleComandaAgenteActivity"
             android:exported="false"
             android:label="Gestión de Comanda" />
+
+        <activity
+            android:name=".ui.screens.SnakeGameActivity"
+            android:exported="false"
+            android:label="SIMEX Game" />
 
     </application>
 

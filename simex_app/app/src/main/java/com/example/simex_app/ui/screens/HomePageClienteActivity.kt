@@ -33,13 +33,14 @@ class HomePageClienteActivity : AppCompatActivity(), OnOfertaDecisionListener {
     private lateinit var cardNoOffers: MaterialCardView
 
     private var clienteId: Int = -1
+    private var nombreUsuario: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_homepagecliente)
 
         clienteId = intent.getIntExtra("CLIENTE_ID", -1)
-        val nombreUsuario = intent.getStringExtra("USER_NAME")
+        nombreUsuario = intent.getStringExtra("USER_NAME")
 
         if (clienteId == -1) {
             Toast.makeText(this, "Error: No se ha encontrado el ID del cliente", Toast.LENGTH_SHORT).show()
@@ -75,7 +76,11 @@ class HomePageClienteActivity : AppCompatActivity(), OnOfertaDecisionListener {
                     true
                 }
                 R.id.nav_juego -> {
-                    Toast.makeText(this, "Ir al Juego", Toast.LENGTH_SHORT).show()
+                    val intentJuego = Intent(this, SnakeGameActivity::class.java)
+                    intentJuego.putExtra("CLIENTE_ID", clienteId)
+                    intentJuego.putExtra("USER_NAME", nombreUsuario)
+                    intentJuego.putExtra("ES_AGENTE", false)
+                    startActivity(intentJuego)
                     true
                 }
                 R.id.nav_perfil -> {

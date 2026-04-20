@@ -49,10 +49,16 @@ class HomePageAgenteActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.nav_home -> true
                 R.id.nav_comandas -> {
-                    val intentComandas = Intent(this, ComandasAgenteActivity::class.java)
-                    intentComandas.putExtra("CLIENTE_ID", agenteId)
-                    intentComandas.putExtra("USER_NAME", nombreAgente)
-                    startActivity(intentComandas)
+                    // Aquí podrías abrir una lista completa de comandas si la creas
+                    Toast.makeText(this, "Ya estás viendo las comandas globales", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                R.id.nav_juego -> {
+                    val intentJuego = Intent(this, SnakeGameActivity::class.java)
+                    intentJuego.putExtra("CLIENTE_ID", agenteId)
+                    intentJuego.putExtra("USER_NAME", nombreAgente)
+                    intentJuego.putExtra("ES_AGENTE", true)
+                    startActivity(intentJuego)
                     true
                 }
                 R.id.nav_perfil -> {
@@ -92,7 +98,7 @@ class HomePageAgenteActivity : AppCompatActivity() {
                 }
 
                 if (comandas.isNotEmpty()) {
-                    adapter.updateList(comandas.take(3))
+                    adapter.updateList(comandas)
                     rvRecentOrders.visibility = View.VISIBLE
                     cardNoOrders.visibility = View.GONE
                 } else {
