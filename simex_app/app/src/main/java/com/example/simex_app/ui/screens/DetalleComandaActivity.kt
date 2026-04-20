@@ -15,16 +15,13 @@ class DetalleComandaActivity : AppCompatActivity() {
         binding = ActivityDetalleComandaBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Configurar Toolbar
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         binding.toolbar.setNavigationOnClickListener { finish() }
 
-        // Obtener la comanda del Intent
         val comanda = intent.getParcelableExtra<Comanda>("DETALLE_COMANDA")
 
         comanda?.let { item ->
-            // Datos básicos
             binding.tvDetalleNumPedido.text = item.numPedido ?: "N/A"
             binding.tvDetalleEstado.text = item.estado?.uppercase() ?: "DESCONOCIDO"
             binding.tvDetalleNombreOferta.text = item.nombreOferta ?: "Sin nombre"
@@ -32,9 +29,7 @@ class DetalleComandaActivity : AppCompatActivity() {
             binding.tvDetalleDestino.text = item.puertoDestino ?: "Destino"
             binding.tvDetalleFecha.text = item.fechaEntrega ?: "Pendiente"
 
-            // Configurar Tracking Timeline
             val pasos = item.pasosSeguimiento ?: emptyList()
-            // Buscamos el 'ordre' del paso donde está actualmente comparando IDs
             val ordenActual = pasos.find { it.id == item.trackingActualId }?.ordre ?: 0
 
             val trackingAdapter = TrackingAdapter(pasos, ordenActual)
