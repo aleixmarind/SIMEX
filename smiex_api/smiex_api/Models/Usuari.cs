@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace smiex_api.Models;
 
@@ -26,4 +27,10 @@ public partial class Usuari
     public virtual ICollection<Oferte> Ofertes { get; set; } = new List<Oferte>();
 
     public virtual Rol Rol { get; set; } = null!;
+
+    [Column("dni_foto_frontal")]
+    public byte[]? DniFotoFrontal { get; set; }
+
+    [Column("dni_foto_trasera")]
+    public byte[]? DniFotoTrasera { get; set; }
 }
