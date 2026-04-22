@@ -21,7 +21,6 @@ namespace smiex_api.Controllers
             _context = context;
         }
 
-        // GET: api/Usuaris/
         [HttpGet("{id}")]
         public async Task<ActionResult> GetUsuari(int id)
         {
@@ -55,12 +54,6 @@ namespace smiex_api.Controllers
             var usuari = await _context.Usuaris
                 .Include(u => u.Rol)
                 .FirstOrDefaultAsync(u => u.Correu == userText && u.Contrasenya == password);
-
-      
-            if (usuari == null)
-            {
-                return Unauthorized(new { message = "Usuario o contraseña incorrectos" });
-            }
 
             
             var response = new LoginResponse

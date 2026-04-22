@@ -65,57 +65,29 @@ namespace smiex_api.Controllers
         // (Agente y Cliente)
         private async Task<ActionResult<IEnumerable<ComandaResumenDTO>>> ObtenerOfertasConTracking(int? clienteId, int estadoId)
         {
-            var pasos = await _context.TrackingSteps
-                .Where(s => s.Id <= 9)
-                .OrderBy(s => s.Ordre)
-                .ToListAsync();
+            var pasos = await _context.TrackingSteps.Where(s => s.Id <= 9).OrderBy(s => s.Ordre)
+                .Select(s => new TrackingStepDTO { Id = s.Id, Ordre = s.Ordre ?? 0, Nom = s.Nom }).ToListAsync();
 
-            var listaPasosDTO = new List<TrackingStepDTO>();
-            foreach (var p in pasos)
+            var query = _context.Ofertes.Include(o => o.PortOrigen).Include(o => o.PortDesti).Include(o => o.EstatOferta)
+                .Where(o => o.Active == 1 && o.EstatOfertaId == estadoId);
+
+            //hay ID, es cliente (filtro)es null, es agente 
+            if (clienteId.HasValue) query = query.Where(o => o.ClientId == clienteId.Value);
+
+            var ofertas = await query.OrderByDescending(o => o.Id).ToListAsync();
+
+            var resultado = ofertas.Select(o => new ComandaResumenDTO
             {
-                listaPasosDTO.Add(new TrackingStepDTO
-                {
-                    Id = p.Id,
-                    Ordre = p.Ordre ?? 0,
-                    Nom = p.Nom
-                });
-            }
-
-            var ofertas = await _context.Ofertes
-                .Include(o => o.PortOrigen)
-                .Include(o => o.PortDesti)
-                .Include(o => o.EstatOferta)
-                .Where(o => o.Active == 1 && o.EstatOfertaId == estadoId)
-                .ToListAsync();
-
-            // manual cliente con el null para agente
-            var listaFinal = new List<Oferte>();
-            foreach (var o in ofertas)
-            {
-                if (clienteId == null || o.ClientId == clienteId)
-                {
-                    listaFinal.Add(o);
-                }
-            }
-
-            var resultado = new List<ComandaResumenDTO>();
-            foreach (var o in listaFinal)
-            {
-                var dto = new ComandaResumenDTO();
-                dto.Id = o.Id;
-                dto.NumPedido = (o.NumPedido != null) ? o.NumPedido.ToString() : "N/A";
-                dto.NombreOferta = o.NombreOferta;
-
-                // Comprobar manualmente cada objeto relacionado (revisar el difrente) 
-                dto.PuertoOrigen = (o.PortOrigen != null) ? o.PortOrigen.Nom : "Sin Puerto";
-                dto.PuertoDestino = (o.PortDesti != null) ? o.PortDesti.Nom : "Sin Puerto";
-                dto.Estado = (o.EstatOferta != null) ? o.EstatOferta.Estat : "Desconocido";
-                dto.FechaEntrega = (o.FechaEntrega != null) ? o.FechaEntrega.Value.ToString("dd/MM/yyyy") : "Pendiente";
-                dto.TrackingActualId = o.TrackingActualId;
-                dto.PasosSeguimiento = listaPasosDTO;
-
-                resultado.Add(dto);
-            }
+                Id = o.Id,
+                NumPedido = o.NumPedido ?? "N/A",
+                NombreOferta = o.NombreOferta,
+                PuertoOrigen = o.PortOrigen?.Nom ?? "N/A",
+                PuertoDestino = o.PortDesti?.Nom ?? "N/A",
+                Estado = o.EstatOferta?.Estat,
+                FechaEntrega = o.FechaEntrega?.ToString("dd/MM/yyyy") ?? "Pendiente",
+                TrackingActualId = o.TrackingActualId,
+                PasosSeguimiento = pasos
+            });
 
             return Ok(resultado);
         }
@@ -133,7 +105,7 @@ namespace smiex_api.Controllers
 
                 if (oferta.TrackingActualId == null || oferta.TrackingActualId == 0)
                 {
-                    oferta.TrackingActualId = 1;
+                    oferta.TrackingActualId = 1;    
                 }
             }
             else
