@@ -11,9 +11,18 @@ import java.util.*
 
 class SnakeView(context: Context, attrs: AttributeSet) : View(context, attrs) {
 
-    private val paintSnake = Paint().apply { color = Color.parseColor("#E21D25") } // brand_600
-    private val paintHead = Paint().apply { color = Color.parseColor("#BA2A30") } // brand_900
-    private val paintPackage = Paint().apply { color = Color.parseColor("#6B7280") } // gray_500
+    private val paintSnake = Paint().apply { color = Color.parseColor("#E21D25") } // brand_600 (Remolque)
+    private val paintHead = Paint().apply { color = Color.parseColor("#BA2A30") } // brand_900 (Cabina)
+    private val paintPackage = Paint().apply { color = Color.parseColor("#4B5563") } // gray_600 (Carga)
+    private val paintGrid = Paint().apply { 
+        color = Color.parseColor("#F3F4F6") // gray_100
+        strokeWidth = 1f
+    }
+    private val paintBorder = Paint().apply {
+        color = Color.parseColor("#111827") // gray_900
+        style = Paint.Style.STROKE
+        strokeWidth = 10f
+    }
     
     private var gridSize = 20
     private var cellSize = 0f
@@ -73,13 +82,13 @@ class SnakeView(context: Context, attrs: AttributeSet) : View(context, attrs) {
             Direction.RIGHT -> Point(head.x + 1, head.y)
         }
 
-        // Check wall collision
+        // Colisión con límites (Recuadro)
         if (newHead.x < 0 || newHead.x >= gridSize || newHead.y < 0 || newHead.y >= gridSize) {
             endGame()
             return
         }
 
-        // Check self collision
+        // Colisión con uno mismo
         if (snake.contains(newHead)) {
             endGame()
             return
@@ -87,7 +96,7 @@ class SnakeView(context: Context, attrs: AttributeSet) : View(context, attrs) {
 
         snake.add(0, newHead)
 
-        // Check package collision
+        // Recoger paquete
         if (newHead == packagePos) {
             onScoreUpdate?.invoke(snake.size - 3)
             spawnPackage()
@@ -115,26 +124,36 @@ class SnakeView(context: Context, attrs: AttributeSet) : View(context, attrs) {
         super.onDraw(canvas)
         cellSize = width.toFloat() / gridSize
 
-        // Draw package
+        // 1. Dibujar Rejilla para ver el espacio
+        for (i in 0..gridSize) {
+            canvas.drawLine(i * cellSize, 0f, i * cellSize, height.toFloat(), paintGrid)
+            canvas.drawLine(0f, i * cellSize, width.toFloat(), i * cellSize, paintGrid)
+        }
+
+        // 2. Dibujar el Recuadro de límites (Lo que pediste)
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paintBorder)
+
+        // 3. Dibujar Paquete (Carga logística)
         canvas.drawRect(
-            packagePos.x * cellSize + 2,
-            packagePos.y * cellSize + 2,
-            (packagePos.x + 1) * cellSize - 2,
-            (packagePos.y + 1) * cellSize - 2,
+            packagePos.x * cellSize + 6,
+            packagePos.y * cellSize + 6,
+            (packagePos.x + 1) * cellSize - 6,
+            (packagePos.y + 1) * cellSize - 6,
             paintPackage
         )
 
-        // Draw snake
+        // 4. Dibujar Camión
         for (i in snake.indices) {
             val p = snake[i]
             val currentPaint = if (i == 0) paintHead else paintSnake
             
-            // Visual logic: First 3 segments look like a van, more segments look like a truck
+            // La cabina es un bloque más sólido, el remolque tiene márgenes
+            val m = if (i == 0) 2f else 5f
             canvas.drawRect(
-                p.x * cellSize + 1,
-                p.y * cellSize + 1,
-                (p.x + 1) * cellSize - 1,
-                (p.y + 1) * cellSize - 1,
+                p.x * cellSize + m,
+                p.y * cellSize + m,
+                (p.x + 1) * cellSize - m,
+                (p.y + 1) * cellSize - m,
                 currentPaint
             )
         }

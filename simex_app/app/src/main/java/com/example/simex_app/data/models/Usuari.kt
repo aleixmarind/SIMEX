@@ -8,5 +8,7 @@ data class Usuari(
     @SerializedName("cognoms", alternate = ["Cognoms"]) val cognoms: String,
     @SerializedName("correu", alternate = ["Correu"]) val correu: String,
     @SerializedName("rolId", alternate = ["RolId"]) val rolId: Int,
-    @SerializedName("active", alternate = ["Active"]) val active: Int
+    @SerializedName("active", alternate = ["Active"]) val active: Int,
+    @SerializedName("dniFotoFrontal", alternate = ["DniFotoFrontal"]) val dniFotoFrontal: String? = null,
+    @SerializedName("dniFotoTrasera", alternate = ["DniFotoTrasera"]) val dniFotoTrasera: String? = null
 )

@@ -30,12 +30,19 @@ interface ApiService {
 
     // --- AGENTE ---
     @GET("api/Ofertes/Agente/Stats")
-    suspend fun getAgenteStats(): Map<String, Int> // revisar este de aqui
+    suspend fun getAgenteStats(): Map<String, Int>
 
     @GET("api/Ofertes/Agente/Recientes")
     suspend fun getComandasGlobales(): List<Comanda>
 
     @POST("api/Ofertes/{id}/tracking")
     suspend fun actualizarTracking(@Path("id") id: Int, @Body nuevoTrackingId: Int): Response<Unit>
+
+    // --- DNI UPLOAD ---
+    @POST("api/Usuaris/{id}/dni-frontal")
+    suspend fun subirDniFrontal(@Path("id") id: Int, @Body base64: String): Response<Unit>
+
+    @POST("api/Usuaris/{id}/dni-trasero")
+    suspend fun subirDniTrasero(@Path("id") id: Int, @Body base64: String): Response<Unit>
 
 }
