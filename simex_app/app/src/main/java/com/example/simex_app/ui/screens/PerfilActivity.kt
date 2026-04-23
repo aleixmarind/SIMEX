@@ -11,7 +11,6 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Base64
 import android.util.Log
-import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -24,17 +23,21 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.net.Socket
+import java.security.KeyStore
+import java.security.SecureRandom
 import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
 import javax.crypto.spec.IvParameterSpec
-import javax.crypto.spec.SecretKeySpec
 
 class PerfilActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityPerfilBinding
     private var clienteId: Int = -1
-    private var nombreUsuario: String = "Usuario" // Cambiado a no-nullable para evitar errores de compilación
-    
+    private var nombreUsuario: String = "Usuario"
     private var imageTarget: String = ""
+
+    private val KEY_ALIAS = "SimexDniKey"
 
     private val selectImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -52,6 +55,12 @@ class PerfilActivity : AppCompatActivity() {
 
         clienteId = intent.getIntExtra("CLIENTE_ID", -1)
         nombreUsuario = intent.getStringExtra("USER_NAME") ?: "Usuario"
+
+        if (clienteId == -1) {
+            Toast.makeText(this, "Error: Sesión no válida", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
 
         setupBottomNavigation(clienteId, nombreUsuario)
         obtenerDatosPerfil(clienteId)
@@ -82,7 +91,6 @@ class PerfilActivity : AppCompatActivity() {
     private fun procesarYSubirImagen(uri: Uri) {
         lifecycleScope.launch {
             try {
-                // 1. Obtener Bitmap de forma moderna
                 val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     ImageDecoder.decodeBitmap(ImageDecoder.createSource(contentResolver, uri))
                 } else {
@@ -90,18 +98,15 @@ class PerfilActivity : AppCompatActivity() {
                     MediaStore.Images.Media.getBitmap(contentResolver, uri)
                 }
 
-                // 2. Convertir a Base64
                 val base64Image = withContext(Dispatchers.Default) {
                     encodeImageToBase64(bitmap)
                 }
 
-                // 3. Encriptar y Enviar (Capa Sockets / Seguridad)
                 val status = withContext(Dispatchers.IO) {
                     enviarImagenEncriptadaSocket(base64Image)
                 }
 
                 if (status) {
-                    // 4. Subir al API de C#
                     val response = withContext(Dispatchers.IO) {
                         if (imageTarget == "frontal") {
                             RetrofitClient.instance.subirDniFrontal(clienteId, base64Image)
@@ -113,43 +118,78 @@ class PerfilActivity : AppCompatActivity() {
                     if (response.isSuccessful) {
                         Toast.makeText(this@PerfilActivity, "DNI subido con éxito", Toast.LENGTH_SHORT).show()
                         obtenerDatosPerfil(clienteId)
+                    } else {
+                        Toast.makeText(this@PerfilActivity, "Error al guardar en base de datos", Toast.LENGTH_SHORT).show()
                     }
+                } else {
+                    Toast.makeText(this@PerfilActivity, "Error en el canal de seguridad", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 Log.e("UPLOAD_ERROR", "Error: ${e.message}")
-                Toast.makeText(this@PerfilActivity, "Error al subir imagen", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@PerfilActivity, "Error al procesar la imagen", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
     private fun encodeImageToBase64(bitmap: Bitmap): String {
         val outputStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 50, outputStream) // Comprimimos un poco más para evitar saturar el JSON
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 50, outputStream)
         val byteArray = outputStream.toByteArray()
         return Base64.encodeToString(byteArray, Base64.NO_WRAP)
     }
 
-    // LÓGICA DE SEGURIDAD: ENCRIPTACIÓN AES + SOCKETS
+    private fun getOrCreateSecretKey(): SecretKey {
+        val keyStore = KeyStore.getInstance("AndroidKeyStore")
+        keyStore.load(null)
+        
+        if (!keyStore.containsAlias(KEY_ALIAS)) {
+            val keyGenerator = KeyGenerator.getInstance("AES", "AndroidKeyStore")
+            val keyGenParameterSpec = android.security.keystore.KeyGenParameterSpec.Builder(
+                KEY_ALIAS,
+                android.security.keystore.KeyProperties.PURPOSE_ENCRYPT or android.security.keystore.KeyProperties.PURPOSE_DECRYPT
+            )
+                .setBlockModes(android.security.keystore.KeyProperties.BLOCK_MODE_CBC)
+                .setEncryptionPaddings(android.security.keystore.KeyProperties.ENCRYPTION_PADDING_PKCS7)
+                .setRandomizedEncryptionRequired(false) 
+                .build()
+            
+            keyGenerator.init(keyGenParameterSpec)
+            return keyGenerator.generateKey()
+        }
+
+        val entry = keyStore.getEntry(KEY_ALIAS, null) as KeyStore.SecretKeyEntry
+        return entry.secretKey
+    }
+
     private suspend fun enviarImagenEncriptadaSocket(base64: String): Boolean {
         return withContext(Dispatchers.IO) {
             try {
-                // Configuración de encriptación AES
-                val secretKey = SecretKeySpec("SimexSecureKey12".toByteArray(), "AES")
-                val iv = IvParameterSpec(ByteArray(16)) // En producción usar IV aleatorio
+                val secretKey = getOrCreateSecretKey()
+
+                val iv = ByteArray(16)
+                SecureRandom().nextBytes(iv)
+                val ivSpec = IvParameterSpec(iv)
+
                 val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-                cipher.init(Cipher.ENCRYPT_MODE, secretKey, iv)
+                cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec)
                 
                 val encryptedData = cipher.doFinal(base64.toByteArray())
 
-                // Simulación de Socket Binario (Canal seguro)
-                // val socket = Socket("10.0.2.2", 8888)
-                // socket.outputStream.write(encryptedData)
-                // socket.close()
+                // Conexión real por socket al servidor de seguridad
+                val serverIp = "10.0.2.2" 
+                val serverPort = 8888
                 
-                Log.d("SECURITY_SOC", "Imagen encriptada viajando por socket seguro...")
+                Socket(serverIp, serverPort).use { socket ->
+                    val outputStream = socket.getOutputStream()
+                    outputStream.write(iv) 
+                    outputStream.write(encryptedData)
+                    outputStream.flush()
+                }
+                
+                Log.d("SECURITY_SOC", "Imagen encriptada y IV enviados por socket real")
                 true
             } catch (e: Exception) {
-                Log.e("SECURITY_ERROR", "Fallo en encriptación", e)
+                Log.e("SECURITY_ERROR", "Fallo en canal seguro: ${e.message}", e)
                 false
             }
         }
@@ -167,7 +207,6 @@ class PerfilActivity : AppCompatActivity() {
                 binding.tvUserId.text = "#${usuario.id}"
                 binding.tvUserRole.text = if (usuario.rolId == 1004) "CLIENTE" else "AGENTE"
 
-                // Cargar miniaturas si ya existen en la DB
                 usuario.dniFotoFrontal?.let {
                     if (it.length > 10) binding.ivDniFrontal.setImageBitmap(decodeBase64ToBitmap(it))
                 }
