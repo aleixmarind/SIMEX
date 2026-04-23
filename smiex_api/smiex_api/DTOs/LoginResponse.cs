@@ -8,7 +8,7 @@
         public int RolId { get; set; }
         public string Tipo { get; set; } = null!;
         public string? NombreRolReal { get; set; }
-        // Cambia byte[] por string?
+        // cambiar byte[] por string? /revisar/
         public string? DniFotoFrontal { get; set; }
         public string? DniFotoTrasera { get; set; }
     }
