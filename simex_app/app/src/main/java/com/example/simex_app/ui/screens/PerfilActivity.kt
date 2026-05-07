@@ -9,8 +9,8 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
-import android.util.Base64
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -22,13 +22,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
-import java.net.Socket
-import java.security.KeyStore
-import java.security.SecureRandom
+import java.io.File
 import javax.crypto.Cipher
-import javax.crypto.KeyGenerator
-import javax.crypto.SecretKey
 import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.SecretKeySpec
 
 class PerfilActivity : AppCompatActivity() {
 
@@ -37,13 +34,16 @@ class PerfilActivity : AppCompatActivity() {
     private var nombreUsuario: String = "Usuario"
     private var imageTarget: String = ""
 
-    private val KEY_ALIAS = "SimexDniKey"
+    // Clave de encriptación y vector de inicialización fijos (AES-128)
+    // Para producción, se recomienda usar el Android Keystore, pero según tu petición se definen aquí.
+    private val AES_KEY = "SimexSecureKey12" // 16 bytes
+    private val IV = "SimexIVVector123"    // 16 bytes
 
     private val selectImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val data: Intent? = result.data
             data?.data?.let { uri ->
-                procesarYSubirImagen(uri)
+                procesarYGuardarLocal(uri)
             }
         }
     }
@@ -55,12 +55,6 @@ class PerfilActivity : AppCompatActivity() {
 
         clienteId = intent.getIntExtra("CLIENTE_ID", -1)
         nombreUsuario = intent.getStringExtra("USER_NAME") ?: "Usuario"
-
-        if (clienteId == -1) {
-            Toast.makeText(this, "Error: Sesión no válida", Toast.LENGTH_SHORT).show()
-            finish()
-            return
-        }
 
         setupBottomNavigation(clienteId, nombreUsuario)
         obtenerDatosPerfil(clienteId)
@@ -88,116 +82,75 @@ class PerfilActivity : AppCompatActivity() {
         selectImageLauncher.launch(intent)
     }
 
-    private fun procesarYSubirImagen(uri: Uri) {
+    private fun procesarYGuardarLocal(uri: Uri) {
         lifecycleScope.launch {
             try {
-                val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    ImageDecoder.decodeBitmap(ImageDecoder.createSource(contentResolver, uri))
-                } else {
-                    @Suppress("DEPRECATION")
-                    MediaStore.Images.Media.getBitmap(contentResolver, uri)
-                }
-
-                val base64Image = withContext(Dispatchers.Default) {
-                    encodeImageToBase64(bitmap)
-                }
-
-                val status = withContext(Dispatchers.IO) {
-                    enviarImagenEncriptadaSocket(base64Image)
-                }
-
-                if (status) {
-                    val response = withContext(Dispatchers.IO) {
-                        if (imageTarget == "frontal") {
-                            RetrofitClient.instance.subirDniFrontal(clienteId, base64Image)
-                        } else {
-                            RetrofitClient.instance.subirDniTrasero(clienteId, base64Image)
-                        }
-                    }
-
-                    if (response.isSuccessful) {
-                        Toast.makeText(this@PerfilActivity, "DNI subido con éxito", Toast.LENGTH_SHORT).show()
-                        obtenerDatosPerfil(clienteId)
+                // 1. Obtener Bitmap de la galería
+                val bitmap = withContext(Dispatchers.IO) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        ImageDecoder.decodeBitmap(ImageDecoder.createSource(contentResolver, uri))
                     } else {
-                        Toast.makeText(this@PerfilActivity, "Error al guardar en base de datos", Toast.LENGTH_SHORT).show()
+                        @Suppress("DEPRECATION")
+                        MediaStore.Images.Media.getBitmap(contentResolver, uri)
                     }
-                } else {
-                    Toast.makeText(this@PerfilActivity, "Error en el canal de seguridad", Toast.LENGTH_SHORT).show()
                 }
+
+                // 2. Convertir a Bytes (compresión al 70% para ahorrar espacio)
+                val outputStream = ByteArrayOutputStream()
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputStream)
+                val imageBytes = outputStream.toByteArray()
+
+                // 3. Encriptar con AES
+                val encryptedData = withContext(Dispatchers.Default) {
+                    encriptarAES(imageBytes)
+                }
+
+                // 4. Guardar en almacenamiento interno (FilesDir)
+                // Se usa el clienteId en el nombre del archivo para separar DNIs entre usuarios locales
+                val fileName = "dni_${imageTarget}_$clienteId.enc"
+                withContext(Dispatchers.IO) {
+                    val file = File(filesDir, fileName)
+                    file.writeBytes(encryptedData)
+                }
+
+                Toast.makeText(this@PerfilActivity, "DNI $imageTarget guardado localmente", Toast.LENGTH_SHORT).show()
+                
+                // 5. Mostrar en la UI inmediatamente
+                if (imageTarget == "frontal") {
+                    binding.ivDniFrontal.setImageBitmap(bitmap)
+                    binding.ivDniFrontal.visibility = View.VISIBLE
+                } else {
+                    binding.ivDniTrasera.setImageBitmap(bitmap)
+                    binding.ivDniTrasera.visibility = View.VISIBLE
+                }
+
             } catch (e: Exception) {
-                Log.e("UPLOAD_ERROR", "Error: ${e.message}")
+                Log.e("LOCAL_STORAGE", "Error al procesar DNI: ${e.message}")
                 Toast.makeText(this@PerfilActivity, "Error al procesar la imagen", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
-    private fun encodeImageToBase64(bitmap: Bitmap): String {
-        val outputStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 50, outputStream)
-        val byteArray = outputStream.toByteArray()
-        return Base64.encodeToString(byteArray, Base64.NO_WRAP)
+    private fun encriptarAES(data: ByteArray): ByteArray {
+        val secretKey = SecretKeySpec(AES_KEY.toByteArray(), "AES")
+        val ivSpec = IvParameterSpec(IV.toByteArray())
+        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec)
+        return cipher.doFinal(data)
     }
 
-    private fun getOrCreateSecretKey(): SecretKey {
-        val keyStore = KeyStore.getInstance("AndroidKeyStore")
-        keyStore.load(null)
-        
-        if (!keyStore.containsAlias(KEY_ALIAS)) {
-            val keyGenerator = KeyGenerator.getInstance("AES", "AndroidKeyStore")
-            val keyGenParameterSpec = android.security.keystore.KeyGenParameterSpec.Builder(
-                KEY_ALIAS,
-                android.security.keystore.KeyProperties.PURPOSE_ENCRYPT or android.security.keystore.KeyProperties.PURPOSE_DECRYPT
-            )
-                .setBlockModes(android.security.keystore.KeyProperties.BLOCK_MODE_CBC)
-                .setEncryptionPaddings(android.security.keystore.KeyProperties.ENCRYPTION_PADDING_PKCS7)
-                .setRandomizedEncryptionRequired(false) 
-                .build()
-            
-            keyGenerator.init(keyGenParameterSpec)
-            return keyGenerator.generateKey()
-        }
-
-        val entry = keyStore.getEntry(KEY_ALIAS, null) as KeyStore.SecretKeyEntry
-        return entry.secretKey
-    }
-
-    private suspend fun enviarImagenEncriptadaSocket(base64: String): Boolean {
-        return withContext(Dispatchers.IO) {
-            try {
-                val secretKey = getOrCreateSecretKey()
-
-                val iv = ByteArray(16)
-                SecureRandom().nextBytes(iv)
-                val ivSpec = IvParameterSpec(iv)
-
-                val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-                cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec)
-                
-                val encryptedData = cipher.doFinal(base64.toByteArray())
-
-                // Conexión real por socket al servidor de seguridad
-                val serverIp = "10.0.2.2" 
-                val serverPort = 8888
-                
-                Socket(serverIp, serverPort).use { socket ->
-                    val outputStream = socket.getOutputStream()
-                    outputStream.write(iv) 
-                    outputStream.write(encryptedData)
-                    outputStream.flush()
-                }
-                
-                Log.d("SECURITY_SOC", "Imagen encriptada y IV enviados por socket real")
-                true
-            } catch (e: Exception) {
-                Log.e("SECURITY_ERROR", "Fallo en canal seguro: ${e.message}", e)
-                false
-            }
-        }
+    private fun desencriptarAES(data: ByteArray): ByteArray {
+        val secretKey = SecretKeySpec(AES_KEY.toByteArray(), "AES")
+        val ivSpec = IvParameterSpec(IV.toByteArray())
+        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec)
+        return cipher.doFinal(data)
     }
 
     private fun obtenerDatosPerfil(id: Int) {
         lifecycleScope.launch {
             try {
+                // Obtener datos básicos del API (Nombre, Email, etc.)
                 val usuario = withContext(Dispatchers.IO) {
                     RetrofitClient.instance.getUsuario(id)
                 }
@@ -207,24 +160,41 @@ class PerfilActivity : AppCompatActivity() {
                 binding.tvUserId.text = "#${usuario.id}"
                 binding.tvUserRole.text = if (usuario.rolId == 1004) "CLIENTE" else "AGENTE"
 
-                usuario.dniFotoFrontal?.let {
-                    if (it.length > 10) binding.ivDniFrontal.setImageBitmap(decodeBase64ToBitmap(it))
-                }
-                usuario.dniFotoTrasera?.let {
-                    if (it.length > 10) binding.ivDniTrasera.setImageBitmap(decodeBase64ToBitmap(it))
-                }
+                // Cargar imágenes de DNI desde el almacenamiento interno local (encriptadas)
+                cargarImagenLocal("frontal")
+                cargarImagenLocal("trasera")
 
             } catch (e: Exception) {
-                Log.e("PERFIL_ERROR", "Error: ${e.message}")
+                Log.e("PERFIL_ERROR", "Error al obtener perfil: ${e.message}")
             }
         }
     }
 
-    private fun decodeBase64ToBitmap(base64Str: String): Bitmap? {
-        return try {
-            val decodedBytes = Base64.decode(base64Str, Base64.DEFAULT)
-            BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
-        } catch (e: Exception) { null }
+    private fun cargarImagenLocal(type: String) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val fileName = "dni_${type}_$clienteId.enc"
+            val file = File(filesDir, fileName)
+            
+            if (file.exists()) {
+                try {
+                    val encryptedData = file.readBytes()
+                    val decryptedData = desencriptarAES(encryptedData)
+                    val bitmap = BitmapFactory.decodeByteArray(decryptedData, 0, decryptedData.size)
+                    
+                    withContext(Dispatchers.Main) {
+                        if (type == "frontal") {
+                            binding.ivDniFrontal.setImageBitmap(bitmap)
+                            binding.ivDniFrontal.visibility = View.VISIBLE
+                        } else {
+                            binding.ivDniTrasera.setImageBitmap(bitmap)
+                            binding.ivDniTrasera.visibility = View.VISIBLE
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("DECRYPT_ERROR", "Error al cargar DNI $type: ${e.message}")
+                }
+            }
+        }
     }
 
     private fun setupBottomNavigation(id: Int, nombre: String) {

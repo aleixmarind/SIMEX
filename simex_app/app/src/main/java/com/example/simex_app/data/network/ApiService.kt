@@ -38,11 +38,4 @@ interface ApiService {
     @POST("api/Ofertes/{id}/tracking")
     suspend fun actualizarTracking(@Path("id") id: Int, @Body nuevoTrackingId: Int): Response<Unit>
 
-    // --- DNI UPLOAD ---
-    @POST("api/Usuaris/{id}/dni-frontal")
-    suspend fun subirDniFrontal(@Path("id") id: Int, @Body base64: String): Response<Unit>
-
-    @POST("api/Usuaris/{id}/dni-trasero")
-    suspend fun subirDniTrasero(@Path("id") id: Int, @Body base64: String): Response<Unit>
-
 }
