@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.KeyEvent
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.example.simex_app.R
@@ -13,13 +14,14 @@ class SnakeGameActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySnakeGameBinding
     private val handler = Handler(Looper.getMainLooper())
-    private var gameTickDelay = 200L
+    private var gameTickDelay = 600L
+    private var lastLevelScore = 0
     private var clienteId: Int = -1
     private var nombreUsuario: String? = null
 
     private val gameTask = object : Runnable {
         override fun run() {
-            binding.snakeView.step()
+            binding.tetrisView.moveDown()
             handler.postDelayed(this, gameTickDelay)
         }
     }
@@ -40,15 +42,17 @@ class SnakeGameActivity : AppCompatActivity() {
     }
 
     private fun setupGame() {
-        binding.snakeView.setOnScoreUpdateListener { score ->
-            binding.tvScore.text = "Paquetes: $score"
-            // Aumentar velocidad cada 5 paquetes
-            if (score > 0 && score % 5 == 0) {
-                gameTickDelay = (gameTickDelay * 0.9).toLong().coerceAtLeast(100L)
+        binding.tetrisView.setOnScoreUpdateListener { score ->
+            binding.tvScore.text = "$score Puntos"
+            
+            // Aumentar dificultad cada 500 puntos
+            if (score - lastLevelScore >= 500) {
+                lastLevelScore = (score / 500) * 500
+                gameTickDelay = (gameTickDelay * 0.85).toLong().coerceAtLeast(150L)
             }
         }
 
-        binding.snakeView.setOnGameOverListener {
+        binding.tetrisView.setOnGameOverListener {
             handler.removeCallbacks(gameTask)
             showGameOverDialog()
         }
@@ -56,13 +60,14 @@ class SnakeGameActivity : AppCompatActivity() {
 
     private fun showGameOverDialog() {
         AlertDialog.Builder(this)
-            .setTitle("¡Entrega Fallida!")
-            .setMessage("Has chocado. Inténtalo de nuevo para completar la logística.")
+            .setTitle("¡Almacén Lleno!")
+            .setMessage("Has organizado la logística con éxito. ¿Quieres intentar superar tu récord?")
             .setCancelable(false)
             .setPositiveButton("REINTENTAR") { _, _ ->
-                gameTickDelay = 200L
-                binding.snakeView.resetGame()
-                binding.tvScore.text = "Paquetes: 0"
+                gameTickDelay = 600L
+                lastLevelScore = 0
+                binding.tetrisView.resetGame()
+                binding.tvScore.text = "0 Puntos"
                 handler.postDelayed(gameTask, gameTickDelay)
             }
             .setNegativeButton("SALIR") { _, _ -> finish() }
@@ -70,10 +75,32 @@ class SnakeGameActivity : AppCompatActivity() {
     }
 
     private fun setupControls() {
-        binding.btnUp.setOnClickListener { binding.snakeView.setDirection(SnakeView.Direction.UP) }
-        binding.btnDown.setOnClickListener { binding.snakeView.setDirection(SnakeView.Direction.DOWN) }
-        binding.btnLeft.setOnClickListener { binding.snakeView.setDirection(SnakeView.Direction.LEFT) }
-        binding.btnRight.setOnClickListener { binding.snakeView.setDirection(SnakeView.Direction.RIGHT) }
+        binding.btnLeft.setOnClickListener { binding.tetrisView.moveLeft() }
+        binding.btnRight.setOnClickListener { binding.tetrisView.moveRight() }
+        binding.btnRotate.setOnClickListener { binding.tetrisView.rotate() }
+        binding.btnDown.setOnClickListener { binding.tetrisView.moveDown() }
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        return when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_LEFT -> {
+                binding.tetrisView.moveLeft()
+                true
+            }
+            KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                binding.tetrisView.moveRight()
+                true
+            }
+            KeyEvent.KEYCODE_DPAD_UP -> {
+                binding.tetrisView.rotate()
+                true
+            }
+            KeyEvent.KEYCODE_DPAD_DOWN -> {
+                binding.tetrisView.moveDown()
+                true
+            }
+            else -> super.onKeyDown(keyCode, event)
+        }
     }
 
     private fun setupBottomNavigation() {
@@ -91,11 +118,17 @@ class SnakeGameActivity : AppCompatActivity() {
                     finish()
                     true
                 }
-                R.id.nav_juego -> true
-                else -> {
-                    // Otros menús si es necesario
-                    false
+                R.id.nav_perfil -> {
+                    handler.removeCallbacks(gameTask)
+                    val intent = Intent(this, PerfilActivity::class.java)
+                    intent.putExtra("CLIENTE_ID", clienteId)
+                    intent.putExtra("USER_NAME", nombreUsuario)
+                    startActivity(intent)
+                    finish()
+                    true
                 }
+                R.id.nav_juego -> true
+                else -> false
             }
         }
     }

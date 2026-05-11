@@ -34,10 +34,8 @@ class PerfilActivity : AppCompatActivity() {
     private var nombreUsuario: String = "Usuario"
     private var imageTarget: String = ""
 
-    // Clave de encriptación y vector de inicialización fijos (AES-128)
-    // Para producción, se recomienda usar el Android Keystore, pero según tu petición se definen aquí.
-    private val AES_KEY = "SimexSecureKey12" // 16 bytes
-    private val IV = "SimexIVVector123"    // 16 bytes
+    private val AES_KEY = "SimexSecureKey12"
+    private val IV = "SimexIVVector123"
 
     private val selectImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -85,7 +83,6 @@ class PerfilActivity : AppCompatActivity() {
     private fun procesarYGuardarLocal(uri: Uri) {
         lifecycleScope.launch {
             try {
-                // 1. Obtener Bitmap de la galería
                 val bitmap = withContext(Dispatchers.IO) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         ImageDecoder.decodeBitmap(ImageDecoder.createSource(contentResolver, uri))
@@ -95,18 +92,14 @@ class PerfilActivity : AppCompatActivity() {
                     }
                 }
 
-                // 2. Convertir a Bytes (compresión al 70% para ahorrar espacio)
                 val outputStream = ByteArrayOutputStream()
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputStream)
                 val imageBytes = outputStream.toByteArray()
 
-                // 3. Encriptar con AES
                 val encryptedData = withContext(Dispatchers.Default) {
                     encriptarAES(imageBytes)
                 }
 
-                // 4. Guardar en almacenamiento interno (FilesDir)
-                // Se usa el clienteId en el nombre del archivo para separar DNIs entre usuarios locales
                 val fileName = "dni_${imageTarget}_$clienteId.enc"
                 withContext(Dispatchers.IO) {
                     val file = File(filesDir, fileName)
@@ -115,7 +108,6 @@ class PerfilActivity : AppCompatActivity() {
 
                 Toast.makeText(this@PerfilActivity, "DNI $imageTarget guardado localmente", Toast.LENGTH_SHORT).show()
                 
-                // 5. Mostrar en la UI inmediatamente
                 if (imageTarget == "frontal") {
                     binding.ivDniFrontal.setImageBitmap(bitmap)
                     binding.ivDniFrontal.visibility = View.VISIBLE
@@ -150,7 +142,6 @@ class PerfilActivity : AppCompatActivity() {
     private fun obtenerDatosPerfil(id: Int) {
         lifecycleScope.launch {
             try {
-                // Obtener datos básicos del API (Nombre, Email, etc.)
                 val usuario = withContext(Dispatchers.IO) {
                     RetrofitClient.instance.getUsuario(id)
                 }
@@ -160,7 +151,6 @@ class PerfilActivity : AppCompatActivity() {
                 binding.tvUserId.text = "#${usuario.id}"
                 binding.tvUserRole.text = if (usuario.rolId == 1004) "CLIENTE" else "AGENTE"
 
-                // Cargar imágenes de DNI desde el almacenamiento interno local (encriptadas)
                 cargarImagenLocal("frontal")
                 cargarImagenLocal("trasera")
 
@@ -207,6 +197,15 @@ class PerfilActivity : AppCompatActivity() {
                     val intent = Intent(this, destination)
                     intent.putExtra("CLIENTE_ID", id)
                     intent.putExtra("USER_NAME", nombre)
+                    startActivity(intent)
+                    finish()
+                    true
+                }
+                R.id.nav_juego -> {
+                    val intent = Intent(this, SnakeGameActivity::class.java)
+                    intent.putExtra("CLIENTE_ID", id)
+                    intent.putExtra("USER_NAME", nombre)
+                    intent.putExtra("ES_AGENTE", binding.tvUserRole.text == "AGENTE")
                     startActivity(intent)
                     finish()
                     true
