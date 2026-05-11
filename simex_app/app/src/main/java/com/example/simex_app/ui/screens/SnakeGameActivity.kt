@@ -14,14 +14,13 @@ class SnakeGameActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySnakeGameBinding
     private val handler = Handler(Looper.getMainLooper())
-    private var gameTickDelay = 600L
-    private var lastLevelScore = 0
+    private var gameTickDelay = 200L // Más rápido para Snake
     private var clienteId: Int = -1
     private var nombreUsuario: String? = null
 
     private val gameTask = object : Runnable {
         override fun run() {
-            binding.tetrisView.moveDown()
+            binding.tetrisView.update()
             handler.postDelayed(this, gameTickDelay)
         }
     }
@@ -44,11 +43,8 @@ class SnakeGameActivity : AppCompatActivity() {
     private fun setupGame() {
         binding.tetrisView.setOnScoreUpdateListener { score ->
             binding.tvScore.text = "$score Puntos"
-            
-            // Aumentar dificultad cada 500 puntos
-            if (score - lastLevelScore >= 500) {
-                lastLevelScore = (score / 500) * 500
-                gameTickDelay = (gameTickDelay * 0.85).toLong().coerceAtLeast(150L)
+            if (score > 0 && score % 100 == 0) {
+                gameTickDelay = (gameTickDelay * 0.95).toLong().coerceAtLeast(80L)
             }
         }
 
@@ -60,12 +56,11 @@ class SnakeGameActivity : AppCompatActivity() {
 
     private fun showGameOverDialog() {
         AlertDialog.Builder(this)
-            .setTitle("¡Almacén Lleno!")
-            .setMessage("Has organizado la logística con éxito. ¿Quieres intentar superar tu récord?")
+            .setTitle("¡Fin de la Partida!")
+            .setMessage("La serpiente ha chocado. ¿Quieres intentarlo de nuevo?")
             .setCancelable(false)
             .setPositiveButton("REINTENTAR") { _, _ ->
-                gameTickDelay = 600L
-                lastLevelScore = 0
+                gameTickDelay = 200L
                 binding.tetrisView.resetGame()
                 binding.tvScore.text = "0 Puntos"
                 handler.postDelayed(gameTask, gameTickDelay)
@@ -77,8 +72,8 @@ class SnakeGameActivity : AppCompatActivity() {
     private fun setupControls() {
         binding.btnLeft.setOnClickListener { binding.tetrisView.moveLeft() }
         binding.btnRight.setOnClickListener { binding.tetrisView.moveRight() }
-        binding.btnRotate.setOnClickListener { binding.tetrisView.rotate() }
-        binding.btnDown.setOnClickListener { binding.tetrisView.moveDown() }
+        binding.btnRotate.setOnClickListener { binding.tetrisView.rotate() } // Arriba
+        binding.btnDown.setOnClickListener { binding.tetrisView.setDirectionDown() } // Abajo
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -96,7 +91,7 @@ class SnakeGameActivity : AppCompatActivity() {
                 true
             }
             KeyEvent.KEYCODE_DPAD_DOWN -> {
-                binding.tetrisView.moveDown()
+                binding.tetrisView.setDirectionDown()
                 true
             }
             else -> super.onKeyDown(keyCode, event)
