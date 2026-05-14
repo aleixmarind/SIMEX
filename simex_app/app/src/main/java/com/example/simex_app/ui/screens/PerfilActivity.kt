@@ -21,6 +21,9 @@ import com.example.simex_app.databinding.ActivityPerfilBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import java.io.ByteArrayOutputStream
 import java.io.File
 import javax.crypto.Cipher
@@ -101,13 +104,15 @@ class PerfilActivity : AppCompatActivity() {
                 }
 
                 val fileName = "dni_${imageTarget}_$clienteId.enc"
+                val file = File(filesDir, fileName)
                 withContext(Dispatchers.IO) {
-                    val file = File(filesDir, fileName)
                     file.writeBytes(encryptedData)
                 }
 
                 Toast.makeText(this@PerfilActivity, "DNI $imageTarget guardado localmente", Toast.LENGTH_SHORT).show()
                 
+                subirAlServidor(file)
+
                 if (imageTarget == "frontal") {
                     binding.ivDniFrontal.setImageBitmap(bitmap)
                     binding.ivDniFrontal.visibility = View.VISIBLE
@@ -119,6 +124,29 @@ class PerfilActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.e("LOCAL_STORAGE", "Error al procesar DNI: ${e.message}")
                 Toast.makeText(this@PerfilActivity, "Error al procesar la imagen", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun subirAlServidor(file: File) {
+        lifecycleScope.launch {
+            try {
+                val mediaType = MediaType.parse("application/octet-stream")
+                val requestFile = RequestBody.create(mediaType, file)
+                val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
+
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitClient.dniInstance.uploadDniEncrypted(clienteId, body)
+                }
+
+                if (response.isSuccessful) {
+                    Log.d("SERVER_UPLOAD", "Éxito: ${response.body()}")
+                    Toast.makeText(this@PerfilActivity, "DNI enviado al servidor", Toast.LENGTH_SHORT).show()
+                } else {
+                    Log.e("SERVER_UPLOAD", "Error: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e("SERVER_UPLOAD", "Fallo: ${e.message}")
             }
         }
     }

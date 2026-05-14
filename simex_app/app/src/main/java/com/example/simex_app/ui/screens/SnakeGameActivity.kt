@@ -14,7 +14,7 @@ class SnakeGameActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySnakeGameBinding
     private val handler = Handler(Looper.getMainLooper())
-    private var gameTickDelay = 200L // Más rápido para Snake
+    private var gameTickDelay = 100L
     private var clienteId: Int = -1
     private var nombreUsuario: String? = null
 
@@ -44,7 +44,7 @@ class SnakeGameActivity : AppCompatActivity() {
         binding.tetrisView.setOnScoreUpdateListener { score ->
             binding.tvScore.text = "$score Puntos"
             if (score > 0 && score % 100 == 0) {
-                gameTickDelay = (gameTickDelay * 0.95).toLong().coerceAtLeast(80L)
+                gameTickDelay = (gameTickDelay * 0.95).toLong().coerceAtLeast(100L)
             }
         }
 
@@ -60,7 +60,7 @@ class SnakeGameActivity : AppCompatActivity() {
             .setMessage("La serpiente ha chocado. ¿Quieres intentarlo de nuevo?")
             .setCancelable(false)
             .setPositiveButton("REINTENTAR") { _, _ ->
-                gameTickDelay = 200L
+                gameTickDelay = 100L
                 binding.tetrisView.resetGame()
                 binding.tvScore.text = "0 Puntos"
                 handler.postDelayed(gameTask, gameTickDelay)

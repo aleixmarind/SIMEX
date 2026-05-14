@@ -21,9 +21,9 @@ class PackageTetrisView(context: Context, attrs: AttributeSet) : View(context, a
     private val paintSnake = Paint().apply { color = Color.parseColor("#E21D25") }
     private val paintFood = Paint().apply { color = Color.parseColor("#10B981") }
     private val paintGrid = Paint().apply { 
-        color = Color.LTGRAY
+        color = Color.BLACK
         style = Paint.Style.STROKE
-        strokeWidth = 1f
+        strokeWidth = -1f
     }
 
     private var onScoreUpdate: ((Int) -> Unit)? = null
@@ -60,7 +60,6 @@ class PackageTetrisView(context: Context, attrs: AttributeSet) : View(context, a
     fun rotate() { if (direction != "DOWN") direction = "UP" }
     fun moveDown() { update() }
 
-    // Método extra para el botón de ir hacia ABAJO
     fun setDirectionDown() { if (direction != "UP") direction = "DOWN" }
 
     fun update() {

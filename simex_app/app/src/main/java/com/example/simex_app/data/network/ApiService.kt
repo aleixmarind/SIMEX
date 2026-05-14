@@ -4,11 +4,9 @@ import com.example.simex_app.data.models.Comanda
 import com.example.simex_app.data.models.DecisionOfertaDTO
 import com.example.simex_app.data.models.LoginResponse
 import com.example.simex_app.data.models.Usuari
+import okhttp3.MultipartBody
 import retrofit2.Response
-import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.Path
+import retrofit2.http.*
 
 interface ApiService {
 
@@ -37,5 +35,13 @@ interface ApiService {
 
     @POST("api/Ofertes/{id}/tracking")
     suspend fun actualizarTracking(@Path("id") id: Int, @Body nuevoTrackingId: Int): Response<Unit>
+
+    // --- SERVIDOR EXTERNO (DNI) ---
+    @Multipart
+    @POST("api/dni/upload/{id}")
+    suspend fun uploadDniEncrypted(
+        @Path("id") clienteId: Int,
+        @Part file: MultipartBody.Part
+    ): Response<String>
 
 }
